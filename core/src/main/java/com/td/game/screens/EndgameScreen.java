@@ -207,7 +207,7 @@ public class EndgameScreen implements Screen {
         leaderboardSubmitted = true;
         if (endState == EndState.WIN) {
             Dreamlo.uploadTimeScore(name, timerSeconds, mapType);
-            game.setScreen(new WinLeaderboardScreen(game, mapType));
+            game.setScreen(new WinLeaderboardScreen(game, mapType, name, timerSeconds));
             dispose();
             return;
         }

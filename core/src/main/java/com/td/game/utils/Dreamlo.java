@@ -25,10 +25,12 @@ public class Dreamlo {
 
     private static final class PendingFetch {
         final GameMap.MapType mapType;
+        final int limit;
         final LeaderboardCallback callback;
 
-        PendingFetch(GameMap.MapType mapType, LeaderboardCallback callback) {
+        PendingFetch(GameMap.MapType mapType, int limit, LeaderboardCallback callback) {
             this.mapType = mapType;
+            this.limit = limit;
             this.callback = callback;
         }
     }
@@ -67,10 +69,15 @@ public class Dreamlo {
     }
 
     public static void fetchScores(final boolean isTimeBoard, final LeaderboardCallback callback) {
-        fetchScores(isTimeBoard, null, callback);
+        fetchScores(isTimeBoard, null, 5, callback);
     }
 
     public static void fetchScores(final boolean isTimeBoard, final GameMap.MapType mapType,
+            final LeaderboardCallback callback) {
+        fetchScores(isTimeBoard, mapType, 5, callback);
+    }
+
+    public static void fetchScores(final boolean isTimeBoard, final GameMap.MapType mapType, final int limit,
             final LeaderboardCallback callback) {
         if (callback == null) {
             return;
@@ -82,22 +89,22 @@ public class Dreamlo {
         synchronized (FETCH_LOCK) {
             if (isTimeBoard) {
                 if (now - timeCacheAtMs <= FETCH_CACHE_WINDOW_MS) {
-                    cached = filterRows(timeCacheData, mapType, true);
+                    cached = filterRows(timeCacheData, mapType, true, limit);
                 } else if (timeFetchInFlight) {
-                    pendingTimeFetches.add(new PendingFetch(mapType, callback));
+                    pendingTimeFetches.add(new PendingFetch(mapType, limit, callback));
                 } else {
                     timeFetchInFlight = true;
-                    pendingTimeFetches.add(new PendingFetch(mapType, callback));
+                    pendingTimeFetches.add(new PendingFetch(mapType, limit, callback));
                     shouldStartFetch = true;
                 }
             } else {
                 if (now - waveCacheAtMs <= FETCH_CACHE_WINDOW_MS) {
-                    cached = filterRows(waveCacheData, mapType, false);
+                    cached = filterRows(waveCacheData, mapType, false, limit);
                 } else if (waveFetchInFlight) {
-                    pendingWaveFetches.add(new PendingFetch(mapType, callback));
+                    pendingWaveFetches.add(new PendingFetch(mapType, limit, callback));
                 } else {
                     waveFetchInFlight = true;
-                    pendingWaveFetches.add(new PendingFetch(mapType, callback));
+                    pendingWaveFetches.add(new PendingFetch(mapType, limit, callback));
                     shouldStartFetch = true;
                 }
             }
@@ -173,7 +180,7 @@ public class Dreamlo {
         }
 
         for (PendingFetch p : pending) {
-            p.callback.onLoaded(filterRows(rows, p.mapType, isTimeBoard));
+            p.callback.onLoaded(filterRows(rows, p.mapType, isTimeBoard, p.limit));
         }
     }
 
@@ -197,7 +204,7 @@ public class Dreamlo {
         return data;
     }
 
-    private static String[][] filterRows(String[][] data, GameMap.MapType mapType, boolean isTimeBoard) {
+    private static String[][] filterRows(String[][] data, GameMap.MapType mapType, boolean isTimeBoard, int limit) {
         if (data == null || data.length == 0) {
             return new String[0][0];
         }
@@ -222,7 +229,8 @@ public class Dreamlo {
             rows.sort((a, b) -> Integer.compare(parseIntSafe(b[1]), parseIntSafe(a[1])));
         }
 
-        int count = Math.min(5, rows.size());
+        int safeLimit = limit <= 0 ? 5 : limit;
+        int count = Math.min(safeLimit, rows.size());
         String[][] out = new String[count][2];
         for (int i = 0; i < count; i++) {
             out[i] = rows.get(i);
