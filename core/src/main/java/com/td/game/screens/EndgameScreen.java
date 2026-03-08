@@ -50,7 +50,8 @@ public class EndgameScreen implements Screen {
     private static final Color MENU_BASE = new Color(0.95f, 0.72f, 0.29f, 0.94f);
     private static final Color BUTTON_BG = new Color(0.56f, 0.43f, 0.33f, 1f);
 
-    public EndgameScreen(TowerDefenseGame game, EndState endState, GameMap.MapType mapType, int lastWave, float timerSeconds) {
+    public EndgameScreen(TowerDefenseGame game, EndState endState, GameMap.MapType mapType, int lastWave,
+            float timerSeconds) {
         this.game = game;
         this.endState = endState;
         this.mapType = mapType == null ? GameMap.MapType.ELEMENTAL_CASTLE : mapType;
@@ -130,7 +131,8 @@ public class EndgameScreen implements Screen {
             drawCentered(titleFont, "YOU WIN", rootPanel.x, titleBaseline, rootPanel.width);
             titleFont.getData().setScale(1f);
             font.setColor(Color.BLACK);
-            drawCentered(font, "Finish Time: " + formatTimer(timerSeconds), rootPanel.x, detailBaseline, rootPanel.width);
+            drawCentered(font, "Finish Time: " + formatTimer(timerSeconds), rootPanel.x, detailBaseline - 25f,
+                    rootPanel.width);
         } else if (endState == EndState.LOSE) {
             titleFont.setColor(Color.BLACK);
             drawCentered(titleFont, "YOU LOSE", rootPanel.x, titleBaseline, rootPanel.width);
@@ -145,7 +147,8 @@ public class EndgameScreen implements Screen {
 
         font.setColor(Color.BLACK);
         if (endState == EndState.WIN || endState == EndState.ENDLESS_FINISH) {
-            drawCentered(font, "Enter Leaderboard", enterLeaderboardBtn.x, enterLeaderboardBtn.y + 38f, enterLeaderboardBtn.width);
+            drawCentered(font, "Enter Leaderboard", enterLeaderboardBtn.x, enterLeaderboardBtn.y + 38f,
+                    enterLeaderboardBtn.width);
         }
         if (endState == EndState.WIN) {
             drawCentered(font, "Endless Mode", endlessModeBtn.x, endlessModeBtn.y + 38f, endlessModeBtn.width);
@@ -330,7 +333,7 @@ public class EndgameScreen implements Screen {
                     nicknamePromptOpen = false;
                     return true;
                 }
-                
+
                 return true;
             }
 
@@ -357,4 +360,3 @@ public class EndgameScreen implements Screen {
         }
     }
 }
-

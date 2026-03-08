@@ -47,42 +47,34 @@ public class GameScreen implements Screen {
     private TowerDefenseGame game;
     private final GameMap.MapType mapType;
 
-    
     private ModelBatch modelBatch;
     private PerspectiveCamera camera;
     private Environment environment;
 
-    
     private SpriteBatch uiBatch;
     private BitmapFont uiFont;
     private BitmapFont uiFontLarge;
     private ShapeRenderer uiShapeRenderer;
 
-    
     private GameMap gameMap;
     private Player player;
     private Array<Pillar> pillars;
 
-    
     private EconomyManager economyManager;
     private ModelFactory modelFactory;
     private int currentWave = 0;
     private final int maxWaves = 50;
 
-    
     private GameShop shop;
     private Inventory inventory;
     private MergeBoard mergeBoard;
     private WizardStaffUI staffUI;
 
-    
     private Model playerModel;
     private Model[] orbModels;
 
-    
     private ModelInstance validHighlight;
 
-    
     private Texture mapAreaBackgroundTexture;
     private Texture hudLifeIconTexture;
     private Texture hudGoldIconTexture;
@@ -128,11 +120,10 @@ public class GameScreen implements Screen {
     private float autoplayBtnW;
     private float autoplayBtnH;
 
-    
     private Element hoveredTooltipElement;
-    private String tooltipContext; 
+    private String tooltipContext;
     private Texture elementInfoPanelTexture;
-    private HashMap<String, String[]> elementDescriptions; 
+    private HashMap<String, String[]> elementDescriptions;
 
     private static class AcquiredAugment {
         int id;
@@ -142,20 +133,18 @@ public class GameScreen implements Screen {
         }
     }
 
-    private float globalTimer; 
+    private float globalTimer;
     private Array<AcquiredAugment> acquiredAugments;
     private boolean showingAugmentsPanel;
     private float playBtnX, playBtnY, playBtnW, playBtnH;
     private float seeAugmentsBtnX, seeAugmentsBtnY, seeAugmentsBtnW, seeAugmentsBtnH;
 
-    
     private boolean gameOver;
     private boolean gameWon;
     private boolean augmentChoiceActive;
     private int augmentOptionA;
     private int augmentOptionB;
 
-    
     private Pillar hoveredPillar;
     private Pillar selectedPillar;
     private Vector3 selectedTilePos;
@@ -167,20 +156,16 @@ public class GameScreen implements Screen {
     private float pillarPanelH;
     private static final float PILLAR_PANEL_BTN_H = 30f;
 
-    
     private float moveDelay = 0.2f;
     private float moveTimer = 0;
     private int playerGridX, playerGridZ;
 
-    
     private String uiMessage = "";
     private float uiMessageTimer = 0f;
 
-    
     private float shopWidth;
     private float uiScale;
 
-    
     private float globalDamageMult = 1f;
     private float globalRangeMult = 1f;
     private float globalAttackSpeedMult = 1f;
@@ -271,7 +256,6 @@ public class GameScreen implements Screen {
             gameMap = new GameMap(modelFactory, mapType);
             Gdx.app.log("GameScreen", "GameMap created.");
 
-            
             int[][] waypoints = gameMap.getWaypointsForMap();
             gateModel = modelFactory.createGateModel();
             gateInstance = new ModelInstance(gateModel);
@@ -317,7 +301,6 @@ public class GameScreen implements Screen {
             throw new RuntimeException(e);
         }
 
-        
         playerGridX = 8;
         playerGridZ = 6;
         player = new Player(new Vector3(playerGridX * Constants.TILE_SIZE, 0, playerGridZ * Constants.TILE_SIZE));
@@ -330,7 +313,7 @@ public class GameScreen implements Screen {
         float height = bounds.getHeight();
 
         float maxDim = Math.max(width, Math.max(depth, height));
-        float targetSize = Constants.TILE_SIZE * 0.95f; 
+        float targetSize = Constants.TILE_SIZE * 0.95f;
         float scale = maxDim > 0 ? targetSize / maxDim : 1f;
 
         player.setModel(playerInstance, scale);
@@ -429,7 +412,6 @@ public class GameScreen implements Screen {
         }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        
         if (!gameOver && !gameWon) {
             globalTimer += delta;
         }
@@ -443,14 +425,12 @@ public class GameScreen implements Screen {
         int screenHeight = Gdx.graphics.getHeight();
         int mapAreaWidth = (int) (screenWidth - shopWidth);
 
-        
         Gdx.gl.glViewport(0, 0, mapAreaWidth, screenHeight);
         uiBatch.getProjectionMatrix().setToOrtho2D(0, 0, mapAreaWidth, screenHeight);
         uiBatch.begin();
         uiBatch.draw(mapAreaBackgroundTexture, 0, 0, mapAreaWidth, screenHeight);
         uiBatch.end();
 
-        
         Gdx.gl.glViewport(0, 0, mapAreaWidth, screenHeight);
         modelBatch.begin(camera);
         gameMap.render(modelBatch, environment);
@@ -465,11 +445,10 @@ public class GameScreen implements Screen {
             pillar.render(modelBatch, environment);
         player.render(modelBatch, environment);
 
-        
         if (gateInstance != null)
             modelBatch.render(gateInstance, environment);
         if (coreSphereInstance != null) {
-            
+
             if (coreFlashTimer > 0) {
                 float t = Math.min(coreFlashTimer / 0.4f, 1f);
                 Color flash = new Color(0.6f + 0.4f * t, 0.2f * (1f - t), 0.85f * (1f - t), 1f);
@@ -485,14 +464,11 @@ public class GameScreen implements Screen {
 
         modelBatch.end();
 
-        
         uiShapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
 
-        
         Gdx.gl.glViewport(0, 0, screenWidth, screenHeight);
         uiBatch.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
 
-        
         if (hoveredPillar != null) {
             RangeOverlayRenderer.drawPillarRange(uiShapeRenderer, camera, hoveredPillar, mapAreaWidth, screenHeight);
         }
@@ -520,7 +496,6 @@ public class GameScreen implements Screen {
 
         buildMenu.render(uiBatch);
 
-        
         updateHoveredElement(screenWidth, screenHeight);
         if (hoveredTooltipElement != null) {
             renderElementTooltip(screenWidth, screenHeight);
@@ -533,7 +508,6 @@ public class GameScreen implements Screen {
         else if (paused)
             renderPauseMenu(screenWidth, screenHeight);
 
-        
         renderMessages(screenWidth, screenHeight);
     }
 
@@ -566,7 +540,6 @@ public class GameScreen implements Screen {
         int mx = Gdx.input.getX();
         int my = screenHeight - Gdx.input.getY();
 
-        
         int shopIdx = shop.getOrbIndexAt(mx, my);
         if (shopIdx >= 0) {
             Element e = shop.getOrbElement(shopIdx);
@@ -577,7 +550,6 @@ public class GameScreen implements Screen {
             }
         }
 
-        
         int invSlot = inventory.getSlotAt(mx, my);
         if (invSlot >= 0) {
             Element e = inventory.getOrbAt(invSlot);
@@ -588,7 +560,6 @@ public class GameScreen implements Screen {
             }
         }
 
-        
         float ss = mergeBoard.getSlotSize();
         float half = ss / 2f;
         if (mergeBoard.hasSlot1() && mx >= mergeBoard.getSlot1X() - half && mx <= mergeBoard.getSlot1X() + half
@@ -610,7 +581,6 @@ public class GameScreen implements Screen {
             return;
         }
 
-        
         if (staffUI.hasOrb() && staffUI.contains(Gdx.input.getX(), Gdx.input.getY())) {
             hoveredTooltipElement = staffUI.getEquippedElement();
             tooltipContext = "staff";
@@ -635,7 +605,6 @@ public class GameScreen implements Screen {
         float mx = Gdx.input.getX();
         float my = screenHeight - Gdx.input.getY();
 
-        
         float px = mx + 16f * uiScale;
         float py = my + 16f * uiScale;
         if (px + panelW > screenWidth)
@@ -650,7 +619,6 @@ public class GameScreen implements Screen {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
-        
         if (elementInfoPanelTexture != null) {
             uiBatch.begin();
             uiBatch.draw(elementInfoPanelTexture, px, py, panelW, panelH);
@@ -662,7 +630,6 @@ public class GameScreen implements Screen {
             uiShapeRenderer.end();
         }
 
-        
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         Color elemColor = new Color(hoveredTooltipElement.getR(), hoveredTooltipElement.getG(),
                 hoveredTooltipElement.getB(), 1f);
@@ -670,7 +637,6 @@ public class GameScreen implements Screen {
         uiShapeRenderer.rect(px, py, panelW, panelH);
         uiShapeRenderer.end();
 
-        
         float textX = px + 16f * uiScale;
         float textY = py + panelH - 18f * uiScale;
         float lineH = 22f * uiScale;
@@ -696,7 +662,7 @@ public class GameScreen implements Screen {
         uiFont.setColor(Color.WHITE);
         uiFont.getData().setScale(uiScale * 0.65f);
         String description = "staff".equals(tooltipContext) ? staffDesc : pillarDesc;
-        
+
         float maxTextW = panelW - 32f * uiScale;
         glyphLayout.setText(uiFont, description, Color.WHITE, maxTextW, com.badlogic.gdx.utils.Align.left, true);
         uiFont.draw(uiBatch, glyphLayout, textX, textY);
@@ -831,7 +797,6 @@ public class GameScreen implements Screen {
         uiFontLarge.setColor(hudTopColor);
         uiFontLarge.draw(uiBatch, waveText, waveStartX, topY);
 
-        
         int minutes = (int) (globalTimer / 60);
         int seconds = (int) (globalTimer % 60);
         int centis = (int) ((globalTimer * 100) % 100);
@@ -1025,7 +990,6 @@ public class GameScreen implements Screen {
             uiShapeRenderer.end();
         }
 
-        
         pauseIconSize = (sectionW - slotGap) * 0.5f;
         speedIconSize = pauseIconSize;
         pauseIconX = sectionX;
@@ -1080,13 +1044,11 @@ public class GameScreen implements Screen {
                     autoplayBtnY + autoplayBtnH * 0.78f);
         }
 
-        
         playBtnW = sectionW;
         playBtnH = 30f * uiScale;
         playBtnX = sectionX;
         playBtnY = autoplayBtnY + autoplayBtnH + 10f * uiScale;
 
-        
         seeAugmentsBtnW = sectionW;
         seeAugmentsBtnH = 30f * uiScale;
         seeAugmentsBtnX = sectionX;
@@ -1096,7 +1058,6 @@ public class GameScreen implements Screen {
 
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        
         uiShapeRenderer.setColor(0.92f, 0.92f, 0.92f, 1f);
         uiShapeRenderer.rect(seeAugmentsBtnX, seeAugmentsBtnY, seeAugmentsBtnW, seeAugmentsBtnH);
 
@@ -1107,7 +1068,6 @@ public class GameScreen implements Screen {
         uiBatch.begin();
         uiFontLarge.setColor(Color.BLACK);
 
-        
         String seeAugText = "SEE AUGMENTS";
         glyphLayout.setText(uiFontLarge, seeAugText);
         if (glyphLayout.width > seeAugmentsBtnW - 4f) {
@@ -1120,7 +1080,6 @@ public class GameScreen implements Screen {
                     seeAugmentsBtnY + seeAugmentsBtnH * 0.78f);
         }
 
-        
         uiFontLarge.setColor(Color.BLACK);
         String playText = "PLAY";
         glyphLayout.setText(uiFontLarge, playText);
@@ -1159,9 +1118,7 @@ public class GameScreen implements Screen {
     }
 
     private void renderPillarStats(int screenWidth, int screenHeight) {
-        
-        
-        
+
         float boxW = 220 * uiScale;
         float boxH = 120 * uiScale;
         float boxX = Gdx.input.getX() + 20;
@@ -1287,7 +1244,6 @@ public class GameScreen implements Screen {
         uiBatch.draw(pauseMenuBackgroundTexture, 0, 0, w, h);
         uiBatch.end();
 
-        
         uiBatch.begin();
         int minutes = (int) (globalTimer / 60);
         int seconds = (int) (globalTimer % 60);
@@ -1300,7 +1256,6 @@ public class GameScreen implements Screen {
         uiFont.getData().setScale(uiScale * 0.54f);
         uiBatch.end();
 
-        
         uiBatch.begin();
         uiFont.setColor(Color.BLACK);
         uiFont.getData().setScale(uiScale * 1.8f);
@@ -1309,7 +1264,6 @@ public class GameScreen implements Screen {
         uiFont.getData().setScale(uiScale * 0.54f);
         uiBatch.end();
 
-        
         float btnW = 300 * uiScale;
         float btnH = 50 * uiScale;
         float btnX = (w - btnW) / 2;
@@ -1465,7 +1419,6 @@ public class GameScreen implements Screen {
         uiFontLarge.draw(uiBatch, "AUGMENT CHOICE", boxX + (boxW - glyphLayout.width) * 0.5f,
                 boxY + boxH - 25 * uiScale);
 
-        
         float leftX = boxX + 40 * uiScale;
         Texture iconA = getAugmentIconTexture(augmentOptionA);
         if (iconA != null) {
@@ -1481,7 +1434,6 @@ public class GameScreen implements Screen {
         glyphLayout.setText(uiFont, descA);
         uiFont.draw(uiBatch, descA, leftX + (cardW - glyphLayout.width) * 0.5f, cardY + 50 * uiScale);
 
-        
         float rightX = boxX + 55 * uiScale + cardW + 15 * uiScale;
         Texture iconB = getAugmentIconTexture(augmentOptionB);
         if (iconB != null) {
@@ -1607,7 +1559,6 @@ public class GameScreen implements Screen {
         }
     }
 
-    
     private Texture getAugmentIconTexture(int augmentId) {
         String path = "";
         switch (augmentId) {
@@ -1640,7 +1591,7 @@ public class GameScreen implements Screen {
         if (file.exists()) {
             return new Texture(file);
         }
-        return null; 
+        return null;
     }
 
     private void rollAugments() {
@@ -1878,11 +1829,11 @@ public class GameScreen implements Screen {
 
         if (x >= btnX && x <= btnX + btnW) {
             if (y >= sellY && y <= sellY + btnH)
-                return 0; 
+                return 0;
             if (y >= addY && y <= addY + btnH)
-                return 1; 
+                return 1;
             if (y >= removeY && y <= removeY + btnH)
-                return 2; 
+                return 2;
         }
         return -1;
     }
@@ -1911,11 +1862,10 @@ public class GameScreen implements Screen {
 
     private void update(float delta) {
         if (augmentChoiceActive)
-            return; 
+            return;
 
         moveTimer -= delta;
 
-        
         if (moveTimer <= 0) {
             int dx = 0, dz = 0;
             if (Gdx.input.isKeyPressed(Input.Keys.W))
@@ -1984,6 +1934,9 @@ public class GameScreen implements Screen {
 
         @Override
         public boolean keyDown(int keycode) {
+            if (com.td.game.input.KeyBindings.handleShortcutKeys(keycode, game, mapType, GameScreen.this)) {
+                return true;
+            }
             if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.P) {
                 paused = !paused;
                 return true;
@@ -2243,8 +2196,7 @@ public class GameScreen implements Screen {
                         awaitingPillarOrbSelection = false;
                         return true;
                     }
-                    
-                    
+
                     if (!awaitingPillarOrbSelection && !isPointInPillarPanel(screenX, flippedY)) {
                         selectedPillar = null;
                         awaitingPillarOrbSelection = false;
@@ -2254,7 +2206,6 @@ public class GameScreen implements Screen {
                     }
                 }
 
-                
                 int slot = inventory.getSlotAt(screenX, flippedY);
                 if (slot != -1) {
                     inventory.handleClick(screenX, flippedY);
@@ -2266,14 +2217,12 @@ public class GameScreen implements Screen {
                     return true;
                 }
 
-                
                 int orbIndex = shop.getOrbIndexAt(screenX, flippedY);
                 if (orbIndex != -1) {
                     buyOrb(orbIndex);
                     return true;
                 }
 
-                
                 if (staffUI.contains(screenX, screenY)) {
                     if (inventory.hasSelection()) {
                         Element selected = inventory.takeSelected();
@@ -2298,7 +2247,6 @@ public class GameScreen implements Screen {
                     return true;
                 }
 
-                
                 if (mergeBoard.isInBounds(screenX, flippedY)) {
                     if (inventory.hasSelection()) {
                         boolean willCompleteMerge = mergeBoard.hasSlot1() ^ mergeBoard.hasSlot2();
@@ -2306,7 +2254,7 @@ public class GameScreen implements Screen {
                             showMessage("Need " + MERGE_COST + "G to merge!");
                             return true;
                         }
-                        
+
                         boolean hadResult = mergeBoard.hasResult();
                         if (mergeBoard.placeOrb(screenX, flippedY, inventory.getSelectedOrb())) {
                             inventory.takeSelected();
@@ -2315,7 +2263,7 @@ public class GameScreen implements Screen {
                             }
                         }
                     } else {
-                        
+
                         Element result = mergeBoard.tryTakeResult(screenX, flippedY);
                         if (result != null) {
                             if (!inventory.addOrb(result))
@@ -2331,27 +2279,24 @@ public class GameScreen implements Screen {
                     return true;
                 }
 
-                
                 int mapWidth = (int) (Gdx.graphics.getWidth() - shopWidth);
                 Ray ray = camera.getPickRay(screenX, screenY, 0, 0, mapWidth, Gdx.graphics.getHeight());
 
-                
                 float t = (0.1f - ray.origin.y) / ray.direction.y;
                 if (t > 0) {
                     float worldX = ray.origin.x + ray.direction.x * t;
                     float worldZ = ray.origin.z + ray.direction.z * t;
 
-                    
                     int gx = Math.round(worldX / Constants.TILE_SIZE);
                     int gz = Math.round(worldZ / Constants.TILE_SIZE);
                     float snapX = gx * Constants.TILE_SIZE;
                     float snapZ = gz * Constants.TILE_SIZE;
 
                     Pillar clickedPillar = null;
-                    
+
                     for (Pillar pillar : pillars) {
                         Vector3 pos = pillar.getPosition();
-                        
+
                         if (Math.abs(pos.x - snapX) < 0.1f && Math.abs(pos.z - snapZ) < 0.1f) {
                             clickedPillar = pillar;
                             break;
@@ -2454,7 +2399,6 @@ public class GameScreen implements Screen {
         return MathUtils.clamp(target, 285f, 340f);
     }
 
-    
     private static com.badlogic.gdx.files.FileHandle resolveAsset(String name) {
         com.badlogic.gdx.files.FileHandle direct = Gdx.files.internal(name);
         if (direct.exists()) {
@@ -2540,4 +2484,3 @@ public class GameScreen implements Screen {
     }
 
 }
-
