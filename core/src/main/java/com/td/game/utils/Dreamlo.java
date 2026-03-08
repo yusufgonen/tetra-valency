@@ -61,7 +61,8 @@ public class Dreamlo {
 
     public static void uploadTimeScore(String name, float totalSeconds, GameMap.MapType mapType) {
 
-        String url = BASE_URL + PRIVATE_TIME + "/add/" + sanitize(withMapTag(name, mapType)) + "/1/" + (int) totalSeconds;
+        String url = BASE_URL + PRIVATE_TIME + "/add/" + sanitize(withMapTag(name, mapType)) + "/1/"
+                + (int) totalSeconds;
         sendRequest(url);
     }
 
@@ -205,7 +206,8 @@ public class Dreamlo {
             if (row.length < 4) {
                 continue;
             }
-            GameMap.MapType rowMap = "DO_".equals(row[3]) ? GameMap.MapType.DESERT_OASIS : GameMap.MapType.ELEMENTAL_CASTLE;
+            GameMap.MapType rowMap = "DO_".equals(row[3]) ? GameMap.MapType.DESERT_OASIS
+                    : GameMap.MapType.ELEMENTAL_CASTLE;
             if (mapType != null && rowMap != mapType) {
                 continue;
             }
@@ -213,10 +215,10 @@ public class Dreamlo {
         }
 
         if (isTimeBoard) {
-            //azalan
+            // azalan
             rows.sort((a, b) -> Float.compare(parseFloatSafe(a[1]), parseFloatSafe(b[1])));
         } else {
-            //artan
+            // artan
             rows.sort((a, b) -> Integer.compare(parseIntSafe(b[1]), parseIntSafe(a[1])));
         }
 
@@ -288,7 +290,11 @@ public class Dreamlo {
     }
 
     private static String sanitize(String name) {
-        return name.replace(" ", "%20");
+        try {
+            return java.net.URLEncoder.encode(name, "UTF-8").replace("+", "%20");
+        } catch (Exception e) {
+            return name.replace(" ", "%20");
+        }
     }
 
     private static String withMapTag(String name, GameMap.MapType mapType) {

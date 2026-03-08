@@ -199,7 +199,8 @@ public class CreditsScreen implements Screen {
             return new BitmapFont();
         FreeTypeFontGenerator gen = new FreeTypeFontGenerator(f);
         FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        p.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "çğışöüÇĞİŞÖÜ";
+        p.characters = FreeTypeFontGenerator.DEFAULT_CHARS
+                + "\u00e7\u011f\u0131\u015f\u00f6\u00fc\u00c7\u011e\u0130\u015e\u00d6\u00dc";
         p.size = size;
         p.color = Color.WHITE;
         BitmapFont out = gen.generateFont(p);

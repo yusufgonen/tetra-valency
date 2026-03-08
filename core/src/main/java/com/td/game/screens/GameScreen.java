@@ -1158,7 +1158,7 @@ public class GameScreen implements Screen {
             uiFont.draw(uiBatch, "Element: " + e.name(), tx, ty);
         } else {
             uiFont.setColor(Color.GRAY);
-            uiFont.draw(uiBatch, "Orb gerekli!", tx, ty);
+            uiFont.draw(uiBatch, "Elemental Orb Needed!", tx, ty);
         }
         uiBatch.end();
     }
@@ -2411,7 +2411,8 @@ public class GameScreen implements Screen {
         com.badlogic.gdx.files.FileHandle f = resolveAsset("fonts/font_game_screen.ttf");
         FreeTypeFontGenerator gen = new FreeTypeFontGenerator(f);
         FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        p.characters = FreeTypeFontGenerator.DEFAULT_CHARS + "çğışöüÇĞİŞÖÜ";
+        p.characters = FreeTypeFontGenerator.DEFAULT_CHARS
+                + "\u00e7\u011f\u0131\u015f\u00f6\u00fc\u00c7\u011e\u0130\u015e\u00d6\u00dc";
         p.size = size;
         p.color = Color.WHITE;
         BitmapFont font = gen.generateFont(p);
