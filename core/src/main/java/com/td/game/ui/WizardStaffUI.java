@@ -52,6 +52,14 @@ public class WizardStaffUI implements Disposable {
     public void update(float delta) {
     }
 
+    public void save(com.td.game.systems.SaveData data) {
+        data.staffOrb = this.equippedElement != null ? this.equippedElement.name() : null;
+    }
+
+    public void load(com.td.game.systems.SaveData data) {
+        this.equippedElement = data.staffOrb != null ? Element.valueOf(data.staffOrb) : null;
+    }
+
     @Override
     public void dispose() {
     }
