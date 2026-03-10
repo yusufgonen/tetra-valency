@@ -64,7 +64,6 @@ public class GameScreen implements Screen {
     private EconomyManager economyManager;
     private WaveManager waveManager;
     private ModelFactory modelFactory;
-    private com.td.game.effects.ProjectileManager projectileManager;
     private int currentWave = 0;
     private final int maxWaves = 50;
 
@@ -326,9 +325,13 @@ public class GameScreen implements Screen {
 
         economyManager = new EconomyManager();
         economyManager.setGold(Constants.STARTING_GOLD);
-        waveManager = new WaveManager(gameMap.getPathWaypoints(), modelFactory);
-        projectileManager = new com.td.game.effects.ProjectileManager();
-        
+
+        Array<Vector3> pathWaypoints = new Array<>();
+        for (int[] wp : gameMap.getWaypointsForMap()) {
+            pathWaypoints.add(new Vector3(wp[0] * Constants.TILE_SIZE, 0, wp[1] * Constants.TILE_SIZE));
+        }
+        waveManager = new WaveManager(pathWaypoints, modelFactory);
+
         // Start first wave automatically
         waveManager.startNextWave();
         Gdx.app.log("GameScreen", "First wave started automatically");
@@ -453,12 +456,12 @@ public class GameScreen implements Screen {
 
         for (Pillar pillar : pillars)
             pillar.render(modelBatch, environment);
-        
+
         // Render enemies
         for (com.td.game.entities.Enemy enemy : waveManager.getActiveEnemies()) {
             enemy.render(modelBatch, environment);
         }
-        
+
         player.render(modelBatch, environment);
 
         if (gateInstance != null)
@@ -1929,7 +1932,7 @@ public class GameScreen implements Screen {
 
         // Update WaveManager
         waveManager.update(delta);
-        
+
         // Update enemies
         for (com.td.game.entities.Enemy enemy : waveManager.getActiveEnemies()) {
             enemy.update(delta);
@@ -1942,15 +1945,12 @@ public class GameScreen implements Screen {
             }
         }
         waveManager.removeDeadEnemies();
-        
-        // Update pillars with enemies
+
+        // Update pillars
         for (Pillar pillar : pillars) {
-            pillar.update(delta, waveManager.getActiveEnemies(), projectileManager);
+            pillar.update(delta);
         }
-        
-        // Update projectiles
-        projectileManager.update(delta);
-        
+
         // Check game over conditions
         if (economyManager.isGameOver()) {
             gameOver = true;
@@ -2594,17 +2594,23 @@ public class GameScreen implements Screen {
                 enemyName = "Pink Blob";
         }
 
-        String elemName = (hoveredEnemy.getElement() != null) ? hoveredEnemy.getElement().getDisplayName() : "No Element";
-        String hpStr = String.format("HP: %.0f / %.0f", Math.max(0, hoveredEnemy.getHealth()), hoveredEnemy.getMaxHealth());
+        String elemName = (hoveredEnemy.getElement() != null) ? hoveredEnemy.getElement().getDisplayName()
+                : "No Element";
+        String hpStr = String.format("HP: %.0f / %.0f", Math.max(0, hoveredEnemy.getHealth()),
+                hoveredEnemy.getMaxHealth());
 
         float panelW = 220f * uiScale;
         float panelH = 95f * uiScale;
 
         px -= panelW / 2;
-        if (px + panelW > screenWidth) px = screenWidth - panelW - 4f;
-        if (px < 0) px = 4f;
-        if (py + panelH > screenHeight) py = screenHeight - panelH - 4f;
-        if (py < 0) py = 4f;
+        if (px + panelW > screenWidth)
+            px = screenWidth - panelW - 4f;
+        if (px < 0)
+            px = 4f;
+        if (py + panelH > screenHeight)
+            py = screenHeight - panelH - 4f;
+        if (py < 0)
+            py = 4f;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -2615,8 +2621,8 @@ public class GameScreen implements Screen {
         uiShapeRenderer.end();
 
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        Color elemColor = (hoveredEnemy.getElement() != null) ?
-            new Color(hoveredEnemy.getElement().getR(), hoveredEnemy.getElement().getG(), hoveredEnemy.getElement().getB(), 1f) : Color.WHITE;
+        Color elemColor = (hoveredEnemy.getElement() != null) ? new Color(hoveredEnemy.getElement().getR(),
+                hoveredEnemy.getElement().getG(), hoveredEnemy.getElement().getB(), 1f) : Color.WHITE;
         uiShapeRenderer.setColor(elemColor);
         uiShapeRenderer.rect(px, py, panelW, panelH);
         uiShapeRenderer.end();
