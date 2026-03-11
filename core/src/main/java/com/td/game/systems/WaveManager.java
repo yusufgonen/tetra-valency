@@ -239,6 +239,7 @@ public class WaveManager implements Disposable {
         for (Enemy enemy : activeEnemies) {
             enemy.takeDamage(enemy.getMaxHealth() * 100);
         }
+        enemiesSpawned = enemiesInWave;
     }
 
     public int getCurrentWave() {
