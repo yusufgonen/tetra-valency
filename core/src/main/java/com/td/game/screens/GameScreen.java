@@ -116,6 +116,7 @@ public class GameScreen implements Screen {
     private boolean paused;
     private boolean speed2x;
     private boolean autoplayEnabled;
+    private boolean consoleOpen;
     private float pauseIconX;
     private float pauseIconY;
     private float pauseIconSize;
@@ -396,6 +397,8 @@ public class GameScreen implements Screen {
         paused = false;
         speed2x = false;
         autoplayEnabled = false;
+        consoleOpen = false;
+
 
         game.audio.playMapMusic(mapType);
 
@@ -422,6 +425,11 @@ public class GameScreen implements Screen {
         this.uiMessage = msg;
         this.uiMessageTimer = 2.0f;
     }
+
+    public void toggleConsole() {
+        consoleOpen = !consoleOpen;
+    }
+
 
     public void killAllEnemies() {
         if (waveManager != null) {
@@ -555,7 +563,46 @@ public class GameScreen implements Screen {
             renderPauseMenu(screenWidth, screenHeight);
 
         renderMessages(screenWidth, screenHeight);
+        renderConsoleOverlay(screenWidth, screenHeight);
+
     }
+
+    private void renderConsoleOverlay(int screenWidth, int screenHeight) {
+        if (!consoleOpen) {
+            return;
+        }
+
+        float consoleW = screenWidth * 0.25f;
+        float consoleH = screenHeight * 0.25f;
+        float consoleX = 0f;
+        float consoleY = screenHeight - consoleH;
+        float inputH = Math.max(26f * uiScale, consoleH * 0.18f);
+        float padding = 8f * uiScale;
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+
+        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        uiShapeRenderer.setColor(0f, 0f, 0f, 0.92f);
+        uiShapeRenderer.rect(consoleX, consoleY, consoleW, consoleH);
+        uiShapeRenderer.setColor(0.05f, 0.05f, 0.05f, 0.95f);
+        uiShapeRenderer.rect(consoleX + 1f, consoleY + 1f, consoleW - 2f, inputH - 2f);
+        uiShapeRenderer.end();
+
+        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        uiShapeRenderer.setColor(Color.WHITE);
+        uiShapeRenderer.rect(consoleX, consoleY, consoleW, consoleH);
+        uiShapeRenderer.line(consoleX, consoleY + inputH, consoleX + consoleW, consoleY + inputH);
+        uiShapeRenderer.end();
+
+        uiBatch.begin();
+        uiFont.getData().setScale(uiScale * 0.65f);
+        uiFont.setColor(Color.WHITE);
+        uiFont.draw(uiBatch, "C:\\>", consoleX + padding, consoleY + inputH - 6f * uiScale);
+        uiFont.getData().setScale(uiScale * 0.54f);
+        uiBatch.end();
+    }
+
 
     private void loadElementDescriptions() {
         elementDescriptions = new HashMap<>();
@@ -731,6 +778,7 @@ public class GameScreen implements Screen {
             uiMessageTimer -= Gdx.graphics.getDeltaTime();
         }
     }
+    
 
     private void loadOrbIconTextures() {
         orbIconTextures.clear();
