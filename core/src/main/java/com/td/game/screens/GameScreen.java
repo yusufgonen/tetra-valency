@@ -632,24 +632,24 @@ public class GameScreen implements Screen {
 
         switch (command) {
             case "help":
-                showConsoleMessage("Komutlar: help, killall, givegold, life, win");
+                showConsoleMessage("Command list: help, killall, givegold, life, win");
                 break;
             case "killall":
                 killAllEnemies();
-                showConsoleMessage("Tum dusmanlar olduruldu");
+                showConsoleMessage("All enemies have been eliminated");
                 break;
             case "givegold":
                 if (economyManager != null) {
                     economyManager.earn(1000);
                 }
-                showConsoleMessage("1000 altin eklendi");
+                showConsoleMessage("1,000 gold have been added");
                 break;
             case "life":
                 if (economyManager != null) {
-                    economyManager.setLives(Constants.STARTING_LIVES);
+                    economyManager.setLives(200);
                 }
                 gameOver = false;
-                showConsoleMessage("Can fullendi");
+                showConsoleMessage("The lives was set to 200");
                 break;
             case "win":
                 int winWave = waveManager != null ? waveManager.getCurrentWave() : 0;
@@ -658,7 +658,7 @@ public class GameScreen implements Screen {
                 dispose();
                 break;
             default:
-                showConsoleMessage("Bilinmeyen komut: " + command);
+                showConsoleMessage("Unknown command: " + command);
                 break;
         }
     }
