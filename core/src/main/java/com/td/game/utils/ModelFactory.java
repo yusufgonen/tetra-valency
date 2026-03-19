@@ -19,6 +19,7 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.UBJsonReader;
 import com.td.game.map.TileType;
 import com.td.game.pillars.PillarType;
+import com.td.game.elements.Element;
 
 public class ModelFactory implements Disposable {
     private final ModelBuilder modelBuilder;
@@ -140,6 +141,31 @@ public class ModelFactory implements Disposable {
                 color = new Color(0.5f, 0.5f, 0.5f, 1f);
         }
         return createFrustumPillar(color, orbColor);
+    }
+
+    public Model getProjectileModel(com.td.game.elements.Element element) {
+        if (element == null) return createOrbModel(Color.WHITE);
+        Color color = new Color(element.getR(), element.getG(), element.getB(), 1f);
+        
+        switch (element) {
+            case EARTH:
+                // Earth: Rock mesh
+                return modelBuilder.createBox(0.6f, 0.6f, 0.6f, new Material(ColorAttribute.createDiffuse(color)), attributes);
+            case FIRE:
+                // Fire: Cone or more complex mesh
+                return modelBuilder.createCone(0.5f, 1.0f, 0.5f, 10, new Material(ColorAttribute.createDiffuse(color)), attributes);
+            case AIR:
+                // Air: Flat circle or ring
+                return modelBuilder.createCylinder(0.8f, 0.1f, 0.8f, 16, new Material(ColorAttribute.createDiffuse(color), new BlendingAttribute(0.5f)), attributes);
+            case ICE:
+                // Ice: Shard-like box
+                return modelBuilder.createBox(0.3f, 1.0f, 0.3f, new Material(ColorAttribute.createDiffuse(color)), attributes);
+            case LIGHT:
+                // Light: Beam/Long cylinder
+                return modelBuilder.createCylinder(0.2f, 10.0f, 0.2f, 8, new Material(ColorAttribute.createDiffuse(color)), attributes);
+            default:
+                return createOrbModel(color);
+        }
     }
 
     public Model createPillarModel(PillarType type) {
