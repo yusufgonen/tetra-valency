@@ -128,7 +128,8 @@ public class GameScreen implements Screen {
     private float infoPanelW;
     private float infoPanelH;
     private boolean paused;
-    private boolean speed2x;
+    private int speedIndex;
+    private static final float[] SPEED_MULTIPLIERS = { 1f, 2f, 8f, 32f };
     private boolean autoplayEnabled;
     private boolean consoleOpen;
     private boolean consoleInputActive;
@@ -416,7 +417,7 @@ public class GameScreen implements Screen {
         mergeInfoOpen = false;
         inventoryInfoOpen = false;
         paused = false;
-        speed2x = false;
+        speedIndex = 0;
         autoplayEnabled = false;
         consoleOpen = false;
         consoleInputActive = false;
@@ -493,7 +494,7 @@ public class GameScreen implements Screen {
         }
 
         if (!gameOver && !gameWon && !paused) {
-            float simDelta = speed2x ? delta * 2f : delta;
+            float simDelta = delta * SPEED_MULTIPLIERS[speedIndex];
             update(simDelta);
         }
 
@@ -1235,7 +1236,7 @@ public class GameScreen implements Screen {
                 pauseIconX + (pauseIconSize - glyphLayout.width) * 0.5f,
                 pauseIconY + (pauseIconSize + glyphLayout.height) * 0.5f);
         uiFontLarge.setColor(Color.BLACK);
-        String speedText = speed2x ? "2X" : "1X";
+        String speedText = String.format("%dX", (int) SPEED_MULTIPLIERS[speedIndex]);
         glyphLayout.setText(uiFontLarge, speedText);
         uiFontLarge.draw(uiBatch, speedText, speedIconX + (speedIconSize - glyphLayout.width) * 0.5f,
                 speedIconY + (speedIconSize + glyphLayout.height) * 0.5f);
@@ -2571,8 +2572,8 @@ public class GameScreen implements Screen {
                     return true;
                 }
                 if (isInRect(screenX, flippedY, speedIconX, speedIconY, speedIconSize, speedIconSize)) {
-                    speed2x = !speed2x;
-                    showMessage(speed2x ? "2x Speed ON" : "2x Speed OFF");
+                    speedIndex = (speedIndex + 1) % SPEED_MULTIPLIERS.length;
+                    showMessage(String.format("Speed: %dX", (int) SPEED_MULTIPLIERS[speedIndex]));
                     return true;
                 }
 
