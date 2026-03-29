@@ -132,9 +132,6 @@ public class GameScreen implements Screen {
     private static final float[] SPEED_MULTIPLIERS = { 1f, 2f, 8f, 32f };
     private boolean autoplayEnabled;
     private boolean consoleOpen;
-    private boolean consoleInputActive;
-    private String consoleInput = "";
-    private String consoleMessage = "";
     private float pauseIconX;
     private float pauseIconY;
     private float pauseIconSize;
@@ -204,6 +201,8 @@ public class GameScreen implements Screen {
     private static final int MERGE_COST = 20;
     private static final float INFO_PANEL_SHIFT_DOWN = 100f;
     private static final float GATE_MODEL_SCALE_MULTIPLIER = 2.0f;
+    private static final String[] CONSOLE_BUTTON_COMMANDS = { "killall", "life", "win" };
+    private static final String[] CONSOLE_BUTTON_LABELS = { "KILL ALL", "LIFE", "WIN" };
 
     public GameScreen(TowerDefenseGame game) {
         this(game, GameMap.MapType.ELEMENTAL_CASTLE, false);
@@ -420,9 +419,6 @@ public class GameScreen implements Screen {
         speedIndex = 0;
         autoplayEnabled = false;
         consoleOpen = false;
-        consoleInputActive = false;
-        consoleInput = "";
-        consoleMessage = "";
 
 
         game.audio.playMapMusic(mapType);
@@ -459,9 +455,6 @@ public class GameScreen implements Screen {
 
     public void toggleConsole() {
         consoleOpen = !consoleOpen;
-        if (!consoleOpen) {
-            consoleInputActive = false;
-        }
     }
 
 
@@ -620,8 +613,11 @@ public class GameScreen implements Screen {
         float consoleH = screenHeight * 0.25f;
         float consoleX = 0f;
         float consoleY = screenHeight - consoleH;
-        float inputH = Math.max(26f * uiScale, consoleH * 0.18f);
         float padding = 8f * uiScale;
+        float buttonW = consoleW * 0.40f;
+        float buttonH = Math.max(30f * uiScale, consoleH * 0.16f);
+        float buttonGap = 8f * uiScale;
+        float firstButtonY = consoleY + consoleH - padding - buttonH;
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
@@ -629,27 +625,35 @@ public class GameScreen implements Screen {
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         uiShapeRenderer.setColor(0f, 0f, 0f, 0.92f);
         uiShapeRenderer.rect(consoleX, consoleY, consoleW, consoleH);
-        uiShapeRenderer.setColor(0.05f, 0.05f, 0.05f, 0.95f);
-        uiShapeRenderer.rect(consoleX + 1f, consoleY + 1f, consoleW - 2f, inputH - 2f);
+        uiShapeRenderer.setColor(0.1f, 0.1f, 0.1f, 0.95f);
+        for (int i = 0; i < CONSOLE_BUTTON_LABELS.length; i++) {
+            float buttonX = consoleX + padding;
+            float buttonY = firstButtonY - i * (buttonH + buttonGap);
+            uiShapeRenderer.rect(buttonX, buttonY, buttonW, buttonH);
+        }
         uiShapeRenderer.end();
 
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         uiShapeRenderer.setColor(Color.WHITE);
         uiShapeRenderer.rect(consoleX, consoleY, consoleW, consoleH);
-        uiShapeRenderer.line(consoleX, consoleY + inputH, consoleX + consoleW, consoleY + inputH);
+        for (int i = 0; i < CONSOLE_BUTTON_LABELS.length; i++) {
+            float buttonX = consoleX + padding;
+            float buttonY = firstButtonY - i * (buttonH + buttonGap);
+            uiShapeRenderer.rect(buttonX, buttonY, buttonW, buttonH);
+        }
         uiShapeRenderer.end();
 
         uiBatch.begin();
-        uiFont.getData().setScale(uiScale * 0.65f);
         uiFont.setColor(Color.WHITE);
-        uiFont.draw(uiBatch, consoleInput, consoleX + padding, consoleY + inputH - 6f * uiScale);
         uiFont.getData().setScale(uiScale * 0.54f);
-        if (!consoleMessage.isEmpty()) {
-            float msgX = consoleX + padding;
-            float msgY = consoleY + consoleH - padding;
-            float msgW = consoleW - padding * 2f;
-            glyphLayout.setText(uiFont, consoleMessage, Color.WHITE, msgW, com.badlogic.gdx.utils.Align.left, true);
-            uiFont.draw(uiBatch, glyphLayout, msgX, msgY);
+        for (int i = 0; i < CONSOLE_BUTTON_LABELS.length; i++) {
+            float buttonX = consoleX + padding;
+            float buttonY = firstButtonY - i * (buttonH + buttonGap);
+            glyphLayout.setText(uiFont, CONSOLE_BUTTON_LABELS[i], Color.WHITE, buttonW,
+                    com.badlogic.gdx.utils.Align.center, false);
+            float textX = buttonX;
+            float textY = buttonY + buttonH * 0.5f + glyphLayout.height * 0.5f;
+            uiFont.draw(uiBatch, glyphLayout, textX, textY);
         }
         uiBatch.end();
     }
@@ -666,24 +670,15 @@ public class GameScreen implements Screen {
 
         switch (command) {
             case "help":
-                showConsoleMessage("Command list: help, killall, givegold, life, win");
                 break;
             case "killall":
                 killAllEnemies();
-                showConsoleMessage("All enemies have been eliminated");
-                break;
-            case "givegold":
-                if (economyManager != null) {
-                    economyManager.earn(1000);
-                }
-                showConsoleMessage("1,000 gold have been added");
                 break;
             case "life":
                 if (economyManager != null) {
-                    economyManager.setLives(200);
+                    economyManager.setLives(20);
                 }
                 gameOver = false;
-                showConsoleMessage("The lives was set to 200");
                 break;
             case "win":
                 int winWave = waveManager != null ? waveManager.getCurrentWave() : 0;
@@ -692,20 +687,35 @@ public class GameScreen implements Screen {
                 dispose();
                 break;
             default:
-                showConsoleMessage("Unknown command: " + command);
                 break;
         }
     }
 
-    private void showConsoleMessage(String message) {
-        if (message == null) {
-            consoleMessage = "";
-        } else {
-            consoleMessage = message;
+    private int getConsoleButtonIndexAt(int screenX, int flippedY, int screenWidth, int screenHeight) {
+        if (!consoleOpen) {
+            return -1;
         }
+        float consoleW = screenWidth * 0.25f;
+        float consoleH = screenHeight * 0.25f;
+        float consoleX = 0f;
+        float consoleY = screenHeight - consoleH;
+        float padding = 8f * uiScale;
+        float buttonW = consoleW * 0.40f;
+        float buttonH = Math.max(30f * uiScale, consoleH * 0.16f);
+        float buttonGap = 8f * uiScale;
+        float firstButtonY = consoleY + consoleH - padding - buttonH;
+
+        for (int i = 0; i < CONSOLE_BUTTON_LABELS.length; i++) {
+            float buttonX = consoleX + padding;
+            float buttonY = firstButtonY - i * (buttonH + buttonGap);
+            if (isInRect(screenX, flippedY, buttonX, buttonY, buttonW, buttonH)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
-    private boolean isInConsoleInputArea(int screenX, int flippedY, int screenWidth, int screenHeight) {
+    private boolean isInConsoleArea(int screenX, int flippedY, int screenWidth, int screenHeight) {
         if (!consoleOpen) {
             return false;
         }
@@ -713,10 +723,7 @@ public class GameScreen implements Screen {
         float consoleH = screenHeight * 0.25f;
         float consoleX = 0f;
         float consoleY = screenHeight - consoleH;
-        float inputH = Math.max(26f * uiScale, consoleH * 0.18f);
-
-        return screenX >= consoleX && screenX <= consoleX + consoleW
-                && flippedY >= consoleY && flippedY <= consoleY + inputH;
+        return isInRect(screenX, flippedY, consoleX, consoleY, consoleW, consoleH);
     }
 
 
@@ -2335,22 +2342,6 @@ public class GameScreen implements Screen {
                 toggleConsole();
                 return true;
             }
-            if (consoleOpen && consoleInputActive) {
-                if (keycode == Input.Keys.BACKSPACE && !consoleInput.isEmpty()) {
-                    consoleInput = consoleInput.substring(0, consoleInput.length() - 1);
-                    return true;
-                }
-                if (keycode == Input.Keys.ENTER) {
-                    handleConsoleCommand(consoleInput);
-                    consoleInput = "";
-                    return true;
-                }
-                if (keycode == Input.Keys.ESCAPE) {
-                    consoleInputActive = false;
-                    return true;
-                }
-                return true;
-            }
             if (com.td.game.input.KeyBindings.handleShortcutKeys(keycode, game, mapType, GameScreen.this)) {
                 return true;
             }
@@ -2399,15 +2390,6 @@ public class GameScreen implements Screen {
 
         @Override
         public boolean keyTyped(char character) {
-            if (!consoleOpen || !consoleInputActive) {
-                return false;
-            }
-            if (character >= 32 && character != 127) {
-                if (consoleInput.length() < 120) {
-                    consoleInput += character;
-                }
-                return true;
-            }
             return false;
         }
 
@@ -2416,11 +2398,15 @@ public class GameScreen implements Screen {
             int flippedY = Gdx.graphics.getHeight() - screenY;
 
             if (consoleOpen && button == Input.Buttons.LEFT) {
-                if (isInConsoleInputArea(screenX, flippedY, Gdx.graphics.getWidth(), Gdx.graphics.getHeight())) {
-                    consoleInputActive = true;
+                int consoleButtonIndex = getConsoleButtonIndexAt(screenX, flippedY, Gdx.graphics.getWidth(),
+                        Gdx.graphics.getHeight());
+                if (consoleButtonIndex >= 0) {
+                    handleConsoleCommand(CONSOLE_BUTTON_COMMANDS[consoleButtonIndex]);
                     return true;
                 }
-                consoleInputActive = false;
+                if (isInConsoleArea(screenX, flippedY, Gdx.graphics.getWidth(), Gdx.graphics.getHeight())) {
+                    return true;
+                }
             }
 
             if (gameOver && button == Input.Buttons.LEFT) {
