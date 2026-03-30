@@ -192,6 +192,8 @@ public class GameScreen implements Screen {
 
     private boolean gameOver;
     private boolean gameWon;
+    private boolean victorySfxPlayed;
+    private boolean loseSfxPlayed;
     private boolean augmentChoiceActive;
     private int augmentOptionA;
     private int augmentOptionB;
@@ -439,6 +441,8 @@ public class GameScreen implements Screen {
         pillarPanelH = 170f * uiScale;
         gameOver = false;
         gameWon = false;
+        victorySfxPlayed = false;
+        loseSfxPlayed = false;
         augmentChoiceActive = false;
         augmentOptionA = -1;
         augmentOptionB = -1;
@@ -483,6 +487,43 @@ public class GameScreen implements Screen {
         this.uiMessageTimer = 2.0f;
     }
 
+    private void setPaused(boolean value) {
+        if (paused == value) {
+            return;
+        }
+        paused = value;
+        if (game != null && game.audio != null) {
+            game.audio.playPauseToggle();
+        }
+    }
+
+    private void showErrorMessage(String msg) {
+        showMessage(msg);
+        if (game != null && game.audio != null) {
+            game.audio.playError();
+        }
+    }
+
+    private void playVictorySfxOnce() {
+        if (victorySfxPlayed) {
+            return;
+        }
+        victorySfxPlayed = true;
+        if (game != null && game.audio != null) {
+            game.audio.playVictory();
+        }
+    }
+
+    private void playLoseSfxOnce() {
+        if (loseSfxPlayed) {
+            return;
+        }
+        loseSfxPlayed = true;
+        if (game != null && game.audio != null) {
+            game.audio.playLose();
+        }
+    }
+
     public void toggleConsole() {
         consoleOpen = !consoleOpen;
         activeConsoleInput = CONSOLE_INPUT_NONE;
@@ -504,8 +545,26 @@ public class GameScreen implements Screen {
         if (waveManager != null) {
             waveManager.killAllEnemies();
             if (!waveManager.isWaveInProgress() && !waveManager.areAllWavesComplete()) {
-                waveManager.startNextWave();
+                tryStartNextWave();
             }
+        }
+    }
+
+    private void tryStartNextWave() {
+        if (waveManager == null) {
+            return;
+        }
+
+        boolean wasInProgress = waveManager.isWaveInProgress();
+        int previousWave = waveManager.getCurrentWave();
+        waveManager.startNextWave();
+
+        if (!wasInProgress
+                && waveManager.isWaveInProgress()
+                && waveManager.getCurrentWave() > previousWave
+                && game != null
+                && game.audio != null) {
+            game.audio.playWaveStart();
         }
     }
 
@@ -882,10 +941,12 @@ public class GameScreen implements Screen {
                 break;
             case "win":
                 if (lastWave > (waveManager != null ? waveManager.getMaxWaves() : maxWaves)) {
+                    playVictorySfxOnce();
                     game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.ENDLESS_FINISH, mapType, lastWave,
                             elapsedTime));
                     dispose();
                 } else if (lastWave >= 0) {
+                    playVictorySfxOnce();
                     game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.WIN, mapType, lastWave, elapsedTime));
                     dispose();
                 } else {
@@ -893,6 +954,7 @@ public class GameScreen implements Screen {
                 }
                 break;
             case "lose":
+                playLoseSfxOnce();
                 game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.LOSE, mapType, lastWave, elapsedTime));
                 dispose();
                 break;
@@ -2350,6 +2412,7 @@ public class GameScreen implements Screen {
             return;
 
         int picked = option == 1 ? augmentOptionA : augmentOptionB;
+        game.audio.playAugmentPick();
         applyAugment(picked);
         acquiredAugments.add(new AcquiredAugment(picked));
         augmentChoiceActive = false;
@@ -2373,6 +2436,7 @@ public class GameScreen implements Screen {
                 break;
             case 3:
                 economyManager.earn(80);
+                game.audio.playGoldGain();
                 showMessage("Augment: Golden Pact");
                 break;
             case 4:
@@ -2381,10 +2445,12 @@ public class GameScreen implements Screen {
                 break;
             case 5:
                 economyManager.earn(120);
+                game.audio.playGoldGain();
                 showMessage("Augment: Emergency Funding");
                 break;
             case 6:
                 economyManager.earn(100);
+                game.audio.playGoldGain();
                 showMessage("Augment: Stipend");
                 break;
             case 7:
@@ -2631,7 +2697,11 @@ public class GameScreen implements Screen {
         buildMenu.updateHover(Gdx.input.getX(), Gdx.graphics.getHeight() - Gdx.input.getY());
 
         // Update WaveManager
+        boolean wasWaveInProgress = waveManager.isWaveInProgress();
         waveManager.update(delta);
+        if (wasWaveInProgress && !waveManager.isWaveInProgress() && waveManager.getCurrentWave() > 0) {
+            game.audio.playWaveComplete();
+        }
 
         if (!waveManager.isWaveInProgress() && !waveManager.areAllWavesComplete()) {
             if (waveManager.getCurrentWave() > 0 && waveManager.getCurrentWave() % 10 == 0
@@ -2640,7 +2710,7 @@ public class GameScreen implements Screen {
                 waveManager.setShownAugmentForWave(waveManager.getCurrentWave(), true);
                 saveGameState();
             } else if (autoplayEnabled) {
-                waveManager.startNextWave();
+                tryStartNextWave();
             }
         }
 
@@ -2651,16 +2721,19 @@ public class GameScreen implements Screen {
                 if (!enemy.isAllied()) {
                     economyManager.loseLife();
                     coreFlashTimer = 0.4f;
+                    game.audio.playCoreHit();
                 }
             }
             if (!enemy.isAlive() && !enemy.hasReachedEnd()) {
                 if (!enemy.isAllied()) {
+                    game.audio.playEnemyDeath();
                     int goldEarned = enemy.getReward();
                     // Gold element grants 100% bonus (2x multiplier)
                     if (enemy.getElement() == Element.GOLD) {
                         goldEarned = (int)(goldEarned * 2f);
                     }
                     economyManager.earn(goldEarned);
+                    game.audio.playGoldGain();
                     
                     // Check for LIFE pillar revive
                     if (LifeAttack.canRevive(pillars, enemy)) {
@@ -2676,7 +2749,12 @@ public class GameScreen implements Screen {
 
         // Update pillars and Gold passive
         for (Pillar pillar : pillars) {
+            int projectileCountBefore = activeProjectiles.size;
             pillar.update(delta, waveManager.getActiveEnemies(), activeProjectiles);
+            int spawnedProjectileCount = activeProjectiles.size - projectileCountBefore;
+            for (int i = 0; i < spawnedProjectileCount; i++) {
+                game.audio.playTowerAttackBasic();
+            }
             if (pillar.isActive() && pillar.getCurrentElement() == Element.GOLD) {
                 // Gold passive: 1 gold per second per level? Let's say 2 gold/sec base.
                 economyManager.earn(2.0f * delta);
@@ -2705,12 +2783,18 @@ public class GameScreen implements Screen {
 
         // Check game over conditions
         if (economyManager.isGameOver()) {
-            gameOver = true;
+            if (!gameOver) {
+                gameOver = true;
+                playLoseSfxOnce();
+            }
             com.td.game.systems.SaveManager.deleteSave(mapType);
             return;
         }
         if (waveManager.areAllWavesComplete() && waveManager.getAliveEnemyCount() == 0) {
-            gameWon = true;
+            if (!gameWon) {
+                gameWon = true;
+                playVictorySfxOnce();
+            }
             com.td.game.systems.SaveManager.deleteSave(mapType);
             return;
         }
@@ -2760,11 +2844,12 @@ public class GameScreen implements Screen {
         if (economyManager.canAfford(price)) {
             if (inventory.addOrb(element)) {
                 economyManager.spend(price);
+                game.audio.playBuySuccess();
             } else {
-                showMessage("Inventory Full!");
+                showErrorMessage("Inventory Full!");
             }
         } else {
-            showMessage("Not enough gold!");
+            showErrorMessage("Not enough gold!");
         }
     }
 
@@ -2783,7 +2868,7 @@ public class GameScreen implements Screen {
                 return true;
             }
             if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.P) {
-                paused = !paused;
+                setPaused(!paused);
                 return true;
             }
             if (augmentChoiceActive) {
@@ -2799,7 +2884,7 @@ public class GameScreen implements Screen {
             }
 
             if (keycode == Input.Keys.SPACE && !waveManager.isWaveInProgress()) {
-                waveManager.startNextWave();
+                tryStartNextWave();
                 return true;
             }
 
@@ -2903,7 +2988,7 @@ public class GameScreen implements Screen {
 
                 if (isInRect(screenX, flippedY, btnX, resumeY, btnW, btnH)) {
                     game.audio.playClick();
-                    paused = false;
+                    setPaused(false);
                 } else if (isInRect(screenX, flippedY, btnX, optionsY, btnW, btnH)) {
                     game.audio.playClick();
                     game.setScreen(new OptionsScreen(game, (com.badlogic.gdx.Screen) GameScreen.this));
@@ -2986,9 +3071,10 @@ public class GameScreen implements Screen {
                     if (!waveManager.isWaveInProgress()) {
                         if (waveManager.areAllWavesComplete()) {
                             gameWon = true;
+                            playVictorySfxOnce();
                         } else if (!augmentChoiceActive) {
                             saveGameState();
-                            waveManager.startNextWave();
+                            tryStartNextWave();
                         }
                     }
                     return true;
@@ -2998,11 +3084,12 @@ public class GameScreen implements Screen {
                     return true;
                 }
                 if (isInRect(screenX, flippedY, pauseIconX, pauseIconY, pauseIconSize, pauseIconSize)) {
-                    paused = !paused;
+                    setPaused(!paused);
                     return true;
                 }
                 if (isInRect(screenX, flippedY, speedIconX, speedIconY, speedIconSize, speedIconSize)) {
                     speedIndex = (speedIndex + 1) % SPEED_MULTIPLIERS.length;
+                    game.audio.playSpeedToggle();
                     showMessage(String.format("Speed: %dX", (int) SPEED_MULTIPLIERS[speedIndex]));
                     return true;
                 }
@@ -3041,12 +3128,13 @@ public class GameScreen implements Screen {
                         if (type != null && selectedTilePos != null) {
                             if (economyManager.canAfford(type.getPrice())) {
                                 economyManager.spend(type.getPrice());
+                                game.audio.playBuySuccess();
                                 Pillar pillar = new Pillar(type, selectedTilePos.cpy(), modelFactory);
                                 pillars.add(pillar);
                                 buildMenu.hide();
                                 selectedTilePos = null;
                             } else {
-                                showMessage("Not enough gold!");
+                                showErrorMessage("Not enough gold!");
                             }
                         }
                     } else {
@@ -3065,6 +3153,8 @@ public class GameScreen implements Screen {
                             inventory.addOrb(removed);
                         }
                         economyManager.earn(selectedPillar.getType().getPrice() / 2);
+                        game.audio.playGoldGain();
+                        game.audio.playSell();
                         pillars.removeValue(selectedPillar, true);
                         selectedPillar = null;
                         awaitingPillarOrbSelection = false;
@@ -3072,7 +3162,7 @@ public class GameScreen implements Screen {
                     }
                     if (panelButton == 1) {
                         awaitingPillarOrbSelection = true;
-                        showMessage("Pick an orb from inventory!");
+                        showErrorMessage("Pick an orb from inventory!");
                         return true;
                     }
                     if (panelButton == 2) {
@@ -3080,7 +3170,7 @@ public class GameScreen implements Screen {
                         if (removed != null) {
                             if (!inventory.addOrb(removed)) {
                                 selectedPillar.placeOrb(removed);
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                             }
                         }
                         awaitingPillarOrbSelection = false;
@@ -3118,7 +3208,7 @@ public class GameScreen implements Screen {
                         Element selected = inventory.takeSelected();
                         Element old = staffUI.equipOrb(selected);
                         if (old != null && !inventory.addOrb(old)) {
-                            showMessage("Inventory Full!");
+                            showErrorMessage("Inventory Full!");
                             inventory.addOrb(selected);
                             staffUI.equipOrb(old);
                         } else {
@@ -3128,7 +3218,7 @@ public class GameScreen implements Screen {
                     } else {
                         Element orb = staffUI.removeOrb();
                         if (orb != null && !inventory.addOrb(orb)) {
-                            showMessage("Inventory Full!");
+                            showErrorMessage("Inventory Full!");
                             staffUI.equipOrb(orb);
                         } else {
                             player.clearStaffOrb();
@@ -3141,7 +3231,7 @@ public class GameScreen implements Screen {
                     if (inventory.hasSelection()) {
                         boolean willCompleteMerge = mergeBoard.hasSlot1() ^ mergeBoard.hasSlot2();
                         if (willCompleteMerge && !economyManager.canAfford(MERGE_COST)) {
-                            showMessage("Need " + MERGE_COST + "G to merge!");
+                            showErrorMessage("Need " + MERGE_COST + "G to merge!");
                             return true;
                         }
 
@@ -3157,11 +3247,11 @@ public class GameScreen implements Screen {
                         Element result = mergeBoard.tryTakeResult(screenX, flippedY);
                         if (result != null) {
                             if (!inventory.addOrb(result))
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                         } else {
                             Element inputOrb = mergeBoard.tryTakeInputOrb(screenX, flippedY);
                             if (inputOrb != null && !inventory.addOrb(inputOrb)) {
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                                 mergeBoard.placeOrb(screenX, flippedY, inputOrb);
                             }
                         }
@@ -3220,7 +3310,7 @@ public class GameScreen implements Screen {
                         float playerX = playerGridX * Constants.TILE_SIZE;
                         float playerZ = playerGridZ * Constants.TILE_SIZE;
                         if (Math.abs(playerX - sx) < 0.1f && Math.abs(playerZ - sz) < 0.1f) {
-                            showMessage("Cannot build on Alchemist tile!");
+                            showErrorMessage("Cannot build on Alchemist tile!");
                             return true;
                         }
 
@@ -3229,7 +3319,7 @@ public class GameScreen implements Screen {
                                 selectedTilePos = new Vector3(sx, 0, sz);
                                 buildMenu.show(screenX, flippedY, true);
                             } else {
-                                showMessage("Cannot build during a wave!");
+                                showErrorMessage("Cannot build during a wave!");
                             }
                         }
                         return true;

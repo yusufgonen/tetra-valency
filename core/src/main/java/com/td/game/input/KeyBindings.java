@@ -44,6 +44,15 @@ public class KeyBindings {
             randomWave = MathUtils.random(1, 49);
         }
         float randomTime = MathUtils.random(60f, 7200f);
+
+        if (game != null && game.audio != null) {
+            if (state == EndgameScreen.EndState.LOSE) {
+                game.audio.playLose();
+            } else if (state == EndgameScreen.EndState.WIN || state == EndgameScreen.EndState.ENDLESS_FINISH) {
+                game.audio.playVictory();
+            }
+        }
+
         game.setScreen(new EndgameScreen(game, state, mapType, randomWave, randomTime));
         if (currentScreen != null) {
             currentScreen.dispose();
