@@ -21,6 +21,7 @@ import com.td.game.utils.Constants;
 public class Enemy implements Disposable {
 
     private static final float POISON_BURST_DURATION = 0.42f;
+    private static final float WAYPOINT_REACH_EPSILON = 0.2f;
     private static Sound enemyHitSound;
     private static boolean enemyHitLoadAttempted;
     private static long enemyHitLastPlayedMs;
@@ -301,14 +302,47 @@ public class Enemy implements Disposable {
             return; // Skip normal movement during knockback
         }
 
-        boolean endReached = isMovingBackwards ? currentWaypointIndex < 0 : currentWaypointIndex >= waypoints.size;
+        boolean endReached = hasCompletedPath();
 
         if (!endReached) {
-            Vector3 target = waypoints.get(Math.max(0, Math.min(waypoints.size - 1, currentWaypointIndex)));
-            Vector3 direction = target.cpy().sub(position).nor();
+            // Calculate speed with all multipliers
+            float actualSpeed = baseSpeed * slowMultiplier * rootSlowMultiplier;
 
-            if (direction.len2() > 0.01f) {
-                float targetRotation = (float) Math.toDegrees(Math.atan2(-direction.x, -direction.z));
+            // Apply confusion speed variance
+            if (confusionTimer > 0) {
+                float variance = (float) Math.sin(confusionTimer * 5f) * confusionSpeedVariance;
+                actualSpeed *= (1f + variance);
+            }
+
+            float remainingMove = actualSpeed * deltaTime;
+            Vector3 movementDirection = new Vector3();
+            int waypointSafetyCounter = 0;
+
+            while (remainingMove > 0f && !hasCompletedPath() && waypointSafetyCounter++ <= waypoints.size) {
+                Vector3 target = waypoints.get(Math.max(0, Math.min(waypoints.size - 1, currentWaypointIndex)));
+                movementDirection.set(target).sub(position);
+                float distanceToTarget = movementDirection.len();
+
+                if (distanceToTarget <= WAYPOINT_REACH_EPSILON) {
+                    position.set(target);
+                    advanceWaypoint();
+                    continue;
+                }
+
+                movementDirection.scl(1f / distanceToTarget);
+                float step = Math.min(remainingMove, distanceToTarget);
+                position.mulAdd(movementDirection, step);
+                walkTimer += step;
+                remainingMove -= step;
+
+                if (step >= distanceToTarget - 0.0001f) {
+                    position.set(target);
+                    advanceWaypoint();
+                }
+            }
+
+            if (movementDirection.len2() > 0.01f) {
+                float targetRotation = (float) Math.toDegrees(Math.atan2(-movementDirection.x, -movementDirection.z));
 
                 // Apply blind rotation noise
                 if (blindTimer > 0) {
@@ -322,32 +356,6 @@ public class Enemy implements Disposable {
                     diff += 360;
                 this.rotation += diff * 12f * deltaTime;
             }
-
-            // Calculate speed with all multipliers
-            float actualSpeed = baseSpeed * slowMultiplier * rootSlowMultiplier;
-
-            // Apply confusion speed variance
-            if (confusionTimer > 0) {
-                float variance = (float) Math.sin(confusionTimer * 5f) * confusionSpeedVariance;
-                actualSpeed *= (1f + variance);
-            }
-
-            position.add(direction.scl(actualSpeed * deltaTime));
-            walkTimer += actualSpeed * deltaTime;
-
-            if (position.dst(target) < 0.2f) {
-                if (isMovingBackwards) {
-                    currentWaypointIndex--;
-                } else {
-                    currentWaypointIndex++;
-                }
-
-                boolean nowEndReached = isMovingBackwards ? currentWaypointIndex < 0 : currentWaypointIndex >= waypoints.size;
-                if (nowEndReached) {
-                    reachedEnd = true;
-                    alive = false;
-                }
-            }
         }
 
         if (animationController != null) {
@@ -355,6 +363,23 @@ public class Enemy implements Disposable {
         }
 
         updateModelPosition();
+    }
+
+    private boolean hasCompletedPath() {
+        return isMovingBackwards ? currentWaypointIndex < 0 : currentWaypointIndex >= waypoints.size;
+    }
+
+    private void advanceWaypoint() {
+        if (isMovingBackwards) {
+            currentWaypointIndex--;
+        } else {
+            currentWaypointIndex++;
+        }
+
+        if (hasCompletedPath()) {
+            reachedEnd = true;
+            alive = false;
+        }
     }
 
     protected void updateModelPosition() {

@@ -148,9 +148,7 @@ public class WaveManager implements Disposable {
         // Check wave completion
         if (enemiesSpawned >= enemiesInWave && getAliveEnemyCount() == 0) {
             waveInProgress = false;
-            if (currentWave >= MAX_WAVES) {
-                allWavesComplete = true;
-            }
+            allWavesComplete = currentWave == MAX_WAVES;
         }
     }
 
@@ -259,6 +257,16 @@ public class WaveManager implements Disposable {
 
     public void setCurrentWave(int currentWave) {
         this.currentWave = currentWave;
+    }
+
+    public void jumpToWave(int targetWave) {
+        this.currentWave = Math.max(0, targetWave - 1);
+        this.enemiesSpawned = 0;
+        this.enemiesInWave = 0;
+        this.spawnTimer = 0f;
+        this.spawnInterval = 0f;
+        this.waveInProgress = false;
+        this.allWavesComplete = false;
     }
 
     public boolean isWaveInProgress() {
