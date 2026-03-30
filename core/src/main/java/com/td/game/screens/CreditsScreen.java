@@ -131,7 +131,10 @@ public class CreditsScreen implements Screen {
         items.add(new CreditItem("SFX", "Used as victory effect", "", IconKind.NONE));
         items.add(new CreditItem("SFX", "Marimba Lose sound effect by FoxBoy Universfield", "https://pixabay.com/sound-effects/", IconKind.NONE));
         items.add(new CreditItem("SFX", "Used as lose effect", "", IconKind.NONE));
+        items.add(new CreditItem("SFX", "fire magic (6) sound effect by FoxBoy Universfield", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Used as lose effect", "", IconKind.NONE));
         items.add(new CreditItem("3D Models", "3D Models (source links pending)", "", IconKind.NONE));
+        
         
         items.add(new CreditItem("Tools/Libraries", "GitHub", "https://github.com/", IconKind.GITHUB));
         items.add(new CreditItem("Tools/Libraries", "libGDX", "https://libgdx.com/", IconKind.LIBGDX));
@@ -147,13 +150,13 @@ public class CreditsScreen implements Screen {
         rootPanel = new Rectangle(w * 0.18f, h * 0.06f, w * 0.64f, h * 0.88f);
         backBtn = new Rectangle(rootPanel.x + 22f, rootPanel.y + 22f, 140f, 48f);
 
-        float namesPanelY = rootPanel.y + rootPanel.height * 0.56f;
-        float namesPanelH = rootPanel.height * 0.14f;
+        float namesPanelY = rootPanel.y + rootPanel.height * 0.60f;
+        float namesPanelH = rootPanel.height * 0.11f;
         namesPanel = new Rectangle(rootPanel.x + 40f, namesPanelY,
                 rootPanel.width - 80f, namesPanelH);
 
-        float viewportY = backBtn.y + backBtn.height + 24f;
-        float viewportTop = namesPanel.y - 34f;
+        float viewportY = backBtn.y + backBtn.height + 16f;
+        float viewportTop = namesPanel.y - 24f;
         float viewportH = Math.max(140f, viewportTop - viewportY);
         creditsViewport = new Rectangle(rootPanel.x + 40f, viewportY, rootPanel.width - 80f, viewportH);
 
@@ -162,8 +165,8 @@ public class CreditsScreen implements Screen {
         nameRows = new Rectangle[names.length];
         float pad = 16f;
         float rowW = namesPanel.width - pad * 2f;
-        float rowH = 30f;
-        float gap = 4f;
+        float rowH = 24f;
+        float gap = 2f;
         float startY = namesPanel.y + namesPanel.height - rowH - 6f;
         for (int i = 0; i < names.length; i++) {
             nameRows[i] = new Rectangle(namesPanel.x + pad, startY - i * (rowH + gap), rowW, rowH);
@@ -521,12 +524,6 @@ public class CreditsScreen implements Screen {
 
         @Override
         public boolean scrolled(float amountX, float amountY) {
-            float mouseX = Gdx.input.getX();
-            float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
-            if (!creditsViewport.contains(mouseX, mouseY)) {
-                return false;
-            }
-
             float maxScroll = getMaxCreditsScroll();
             if (maxScroll <= 0f) {
                 return false;

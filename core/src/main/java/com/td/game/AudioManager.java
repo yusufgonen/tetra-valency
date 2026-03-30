@@ -24,6 +24,7 @@ public class AudioManager {
     private Sound waveCompleteSound;
     private Sound victorySound;
     private Sound loseSound;
+    private Sound towerAttackBasicSound;
     private float musicVolume;
     private float soundVolume;
 
@@ -76,6 +77,11 @@ public class AudioManager {
         FileHandle loseFile = resolveAsset("audio/sfx/lose.ogg");
         if (loseFile.exists()) {
             loseSound = Gdx.audio.newSound(loseFile);
+        }
+
+        FileHandle towerAttackBasicFile = resolveAsset("audio/sfx/tower_attack_basic.ogg");
+        if (towerAttackBasicFile.exists()) {
+            towerAttackBasicSound = Gdx.audio.newSound(towerAttackBasicFile);
         }
     }
 
@@ -150,6 +156,12 @@ public class AudioManager {
     public void playLose() {
         if (loseSound != null) {
             loseSound.play(soundVolume * 2.8f);
+        }
+    }
+
+    public void playTowerAttackBasic() {
+        if (towerAttackBasicSound != null) {
+            towerAttackBasicSound.play(soundVolume * 1.9f);
         }
     }
 
@@ -243,6 +255,10 @@ public class AudioManager {
         if (loseSound != null) {
             loseSound.dispose();
             loseSound = null;
+        }
+        if (towerAttackBasicSound != null) {
+            towerAttackBasicSound.dispose();
+            towerAttackBasicSound = null;
         }
     }
 

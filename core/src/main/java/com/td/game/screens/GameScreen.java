@@ -2377,7 +2377,12 @@ public class GameScreen implements Screen {
 
         // Update pillars and Gold passive
         for (Pillar pillar : pillars) {
+            int projectileCountBefore = activeProjectiles.size;
             pillar.update(delta, waveManager.getActiveEnemies(), activeProjectiles);
+            int spawnedProjectileCount = activeProjectiles.size - projectileCountBefore;
+            for (int i = 0; i < spawnedProjectileCount; i++) {
+                game.audio.playTowerAttackBasic();
+            }
             if (pillar.isActive() && pillar.getCurrentElement() == Element.GOLD) {
                 // Gold passive: 1 gold per second per level? Let's say 2 gold/sec base.
                 economyManager.earn(2.0f * delta);
