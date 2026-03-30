@@ -13,7 +13,9 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
 import com.td.game.TowerDefenseGame;
 
 public class CreditsScreen implements Screen {
@@ -25,12 +27,55 @@ public class CreditsScreen implements Screen {
     private GlyphLayout glyph;
     private Texture bgTexture;
     private Texture logoTexture;
+    private Texture githubBadgeTexture;
+    private Texture libgdxBadgeTexture;
+    private Texture gradleBadgeTexture;
+    private Texture dreamloBadgeTexture;
 
     private Rectangle rootPanel;
     private Rectangle namesPanel;
+    private Rectangle creditsViewport;
     private Rectangle backBtn;
     private Rectangle[] nameRows;
     private String[] names;
+
+    private Array<CreditItem> creditItems;
+    private Array<LinkEntry> linkEntries;
+    private float creditsScroll;
+    private float creditsContentHeight;
+    private static final float SCROLL_STEP = 34f;
+
+    private enum IconKind {
+        NONE, GITHUB, LIBGDX, GRADLE, DREAMLO
+    }
+
+    private static class CreditItem {
+        final String category;
+        final String label;
+        final String url;
+        final IconKind iconKind;
+
+        CreditItem(String category, String label, String url, IconKind iconKind) {
+            this.category = category;
+            this.label = label;
+            this.url = url;
+            this.iconKind = iconKind;
+        }
+
+        boolean hasLink() {
+            return url != null && !url.isEmpty();
+        }
+    }
+
+    private static class LinkEntry {
+        Rectangle rect;
+        String url;
+
+        LinkEntry(Rectangle rect, String url) {
+            this.rect = rect;
+            this.url = url;
+        }
+    }
 
     public CreditsScreen(TowerDefenseGame game) {
         this.game = game;
@@ -48,32 +93,71 @@ public class CreditsScreen implements Screen {
             bgTexture = loadTextureSafe("ui/augment_screen_bg.png");
         }
         logoTexture = loadTextureSafe("ui/cosmovision.png");
+        githubBadgeTexture = loadTextureSafe("credits/github.png");
+        if (githubBadgeTexture == null) {
+            // LibGDX textures do not render SVG directly; keep fallback text badge if PNG is absent.
+            githubBadgeTexture = loadTextureSafe("credits/github.svg");
+        }
+        libgdxBadgeTexture = loadTextureSafe("credits/libgdx.png");
+        gradleBadgeTexture = loadTextureSafe("credits/gradle.png");
+        dreamloBadgeTexture = loadTextureSafe("credits/dreamlo.png");
+        creditItems = createCreditItems();
+        linkEntries = new Array<>();
         recalcLayout();
         Gdx.input.setInputProcessor(new InputHandler());
+    }
+
+    private Array<CreditItem> createCreditItems() {
+        Array<CreditItem> items = new Array<>();
+
+        items.add(new CreditItem("Icons", "GitHub-sourced UI/Game Icons", "https://github.com/", IconKind.NONE));
+
+        items.add(new CreditItem("Fonts", "Paytone One", "https://fonts.google.com/specimen/Paytone+One", IconKind.NONE));
+
+        items.add(new CreditItem("Music", "Background Music (source link pending)", "", IconKind.NONE));
+
+        items.add(new CreditItem("SFX", "Sound Effects (source links pending)", "", IconKind.NONE));
+
+        items.add(new CreditItem("3D Models", "3D Models (source links pending)", "", IconKind.NONE));
+
+        items.add(new CreditItem("Tools/Libraries", "GitHub", "https://github.com/", IconKind.GITHUB));
+        items.add(new CreditItem("Tools/Libraries", "libGDX", "https://libgdx.com/", IconKind.LIBGDX));
+        items.add(new CreditItem("Tools/Libraries", "Gradle", "https://gradle.org/", IconKind.GRADLE));
+        items.add(new CreditItem("Tools/Libraries", "Dreamlo", "http://dreamlo.com/", IconKind.DREAMLO));
+
+        return items;
     }
 
     private void recalcLayout() {
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
-        rootPanel = new Rectangle(w * 0.22f, h * 0.08f, w * 0.56f, h * 0.84f);
+        rootPanel = new Rectangle(w * 0.18f, h * 0.06f, w * 0.64f, h * 0.88f);
         backBtn = new Rectangle(rootPanel.x + 22f, rootPanel.y + 22f, 140f, 48f);
 
-        float namesPanelY = rootPanel.y + rootPanel.height * 0.38f;
-        float namesPanelH = rootPanel.height * 0.32f;
+        float namesPanelY = rootPanel.y + rootPanel.height * 0.52f;
+        float namesPanelH = rootPanel.height * 0.18f;
         namesPanel = new Rectangle(rootPanel.x + 40f, namesPanelY,
                 rootPanel.width - 80f, namesPanelH);
+
+        float viewportY = backBtn.y + backBtn.height + 24f;
+        float viewportTop = namesPanel.y - 34f;
+        float viewportH = Math.max(140f, viewportTop - viewportY);
+        creditsViewport = new Rectangle(rootPanel.x + 40f, viewportY, rootPanel.width - 80f, viewportH);
 
         names = new String[] { "Umit Yusuf GONEN", "Ahmet Efe CANPOLAT", "Burhan TURK", "Onur Yusuf YILMAZ",
                 "Oguzhan YILMAZ" };
         nameRows = new Rectangle[names.length];
-        float pad = 18f;
+        float pad = 16f;
         float rowW = namesPanel.width - pad * 2f;
-        float rowH = 38f;
-        float gap = 6f;
-        float startY = namesPanel.y + namesPanel.height - rowH;
+        float rowH = 30f;
+        float gap = 4f;
+        float startY = namesPanel.y + namesPanel.height - rowH - 6f;
         for (int i = 0; i < names.length; i++) {
             nameRows[i] = new Rectangle(namesPanel.x + pad, startY - i * (rowH + gap), rowW, rowH);
         }
+
+        creditsContentHeight = calculateCreditsContentHeight();
+        creditsScroll = MathUtils.clamp(creditsScroll, 0f, getMaxCreditsScroll());
     }
 
     @Override
@@ -90,16 +174,21 @@ public class CreditsScreen implements Screen {
         }
 
         shapes.begin(ShapeRenderer.ShapeType.Filled);
-        drawRect(rootPanel, 34f, new Color(0.89f, 0.67f, 0.26f, 0.96f));
+        drawRect(rootPanel, 34f, new Color(0.89f, 0.67f, 0.26f, 0.94f));
+
+        drawRect(namesPanel, 16f, new Color(0.95f, 0.79f, 0.42f, 0.42f));
+        drawRect(creditsViewport, 16f, new Color(0.95f, 0.79f, 0.42f, 0.28f));
 
         drawRect(backBtn, backBtn.height * 0.5f, new Color(0.56f, 0.43f, 0.33f, 1f));
 
-        float sepY = namesPanel.y + namesPanel.height + 6f;
+        float sepY = namesPanel.y + namesPanel.height + 12f;
         shapes.setColor(new Color(0.72f, 0.55f, 0.30f, 1f));
         shapes.rect(rootPanel.x + 60f, sepY, rootPanel.width - 120f, 2f);
 
-        float sep2Y = nameRows[nameRows.length - 1].y - 8f;
+        float sep2Y = namesPanel.y - 14f;
         shapes.rect(rootPanel.x + 60f, sep2Y, rootPanel.width - 120f, 2f);
+
+        drawCreditsScrollbar();
         shapes.end();
 
         batch.begin();
@@ -111,10 +200,15 @@ public class CreditsScreen implements Screen {
             batch.draw(logoTexture, logoX, logoY, logoSize, logoSize);
         }
 
+        titleFont.setColor(new Color(0.23f, 0.15f, 0.08f, 1f));
+        glyph.setText(titleFont, "Credits");
+        titleFont.draw(batch, "Credits", rootPanel.x + (rootPanel.width - glyph.width) * 0.5f,
+            rootPanel.y + rootPanel.height - 24f);
+
         font.setColor(new Color(0.40f, 0.28f, 0.14f, 1f));
         glyph.setText(font, "Team Members");
         font.draw(batch, "Team Members", rootPanel.x + (rootPanel.width - glyph.width) * 0.5f,
-                sepY + glyph.height + 6f);
+            sepY + glyph.height + 8f);
 
         font.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
         for (int i = 0; i < names.length; i++) {
@@ -124,14 +218,12 @@ public class CreditsScreen implements Screen {
         font.setColor(new Color(0.40f, 0.28f, 0.14f, 1f));
         glyph.setText(font, "Used Assets");
 
-        float usedAssetsY = sep2Y - glyph.height - 4f;
+        float usedAssetsY = sep2Y - 8f;
         font.draw(batch, "Used Assets", rootPanel.x + (rootPanel.width - glyph.width) * 0.5f,
                 usedAssetsY);
 
         font.setColor(new Color(0.52f, 0.38f, 0.22f, 1f));
-        glyph.setText(font, "To be updated.");
-        font.draw(batch, "To be updated.", rootPanel.x + (rootPanel.width - glyph.width) * 0.5f,
-                usedAssetsY - glyph.height - 8f);
+        renderAssetCreditsList();
 
         drawCentered("Back", backBtn.x, backBtn.y + backBtn.height * 0.67f, backBtn.width);
         batch.end();
@@ -148,6 +240,146 @@ public class CreditsScreen implements Screen {
         font.draw(batch, text, x + (width - glyph.width) * 0.5f, baselineY);
     }
 
+    private void renderAssetCreditsList() {
+        if (creditItems == null)
+            return;
+
+        linkEntries.clear();
+
+        float x = creditsViewport.x + 12f;
+        float y = creditsViewport.y + creditsViewport.height - 12f - creditsScroll;
+        float iconSize = 18f;
+        float categoryGap = 22f;
+        float labelGap = 20f;
+        float linkGap = 18f;
+        float itemGap = 10f;
+        String currentCategory = "";
+
+        for (CreditItem item : creditItems) {
+            if (!item.category.equals(currentCategory)) {
+                currentCategory = item.category;
+                if (isVisibleY(y)) {
+                    font.setColor(new Color(0.35f, 0.24f, 0.12f, 1f));
+                    glyph.setText(font, currentCategory);
+                    font.draw(batch, currentCategory, x, y);
+                }
+                y -= categoryGap;
+            }
+
+            float rowY = y;
+            if (isVisibleY(rowY)) {
+                drawProviderIcon(item.iconKind, x, rowY - iconSize + 4f, iconSize);
+            }
+
+            float textX = x + (item.iconKind == IconKind.NONE ? 0f : 26f);
+            if (isVisibleY(rowY)) {
+                font.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
+                font.draw(batch, item.label, textX, rowY);
+            }
+
+            if (item.hasLink()) {
+                float linkY = rowY - 16f;
+                glyph.setText(font, item.url);
+                if (isVisibleY(linkY)) {
+                    font.setColor(new Color(0.10f, 0.24f, 0.55f, 1f));
+                    font.draw(batch, item.url, textX, linkY);
+                    linkEntries.add(new LinkEntry(new Rectangle(textX, linkY - glyph.height, glyph.width, glyph.height + 4f), item.url));
+                }
+                y -= linkGap;
+            }
+
+            y -= labelGap + itemGap;
+        }
+    }
+
+    private float calculateCreditsContentHeight() {
+        if (creditItems == null || creditItems.size == 0) {
+            return 0f;
+        }
+
+        float categoryGap = 22f;
+        float labelGap = 20f;
+        float linkGap = 18f;
+        float itemGap = 10f;
+        float total = 0f;
+        String currentCategory = "";
+
+        for (CreditItem item : creditItems) {
+            if (!item.category.equals(currentCategory)) {
+                currentCategory = item.category;
+                total += categoryGap;
+            }
+            total += labelGap + itemGap;
+            if (item.hasLink()) {
+                total += linkGap;
+            }
+        }
+
+        return total + 18f;
+    }
+
+    private float getMaxCreditsScroll() {
+        return Math.max(0f, creditsContentHeight - creditsViewport.height);
+    }
+
+    private boolean isVisibleY(float baselineY) {
+        return baselineY >= creditsViewport.y + 4f && baselineY <= creditsViewport.y + creditsViewport.height - 2f;
+    }
+
+    private void drawCreditsScrollbar() {
+        if (creditsViewport == null || creditsContentHeight <= creditsViewport.height + 2f) {
+            return;
+        }
+
+        float trackW = 6f;
+        float trackX = creditsViewport.x + creditsViewport.width - 10f;
+        float trackY = creditsViewport.y + 6f;
+        float trackH = creditsViewport.height - 12f;
+
+        shapes.setColor(new Color(0.46f, 0.32f, 0.18f, 0.35f));
+        shapes.rect(trackX, trackY, trackW, trackH);
+
+        float thumbRatio = MathUtils.clamp(creditsViewport.height / creditsContentHeight, 0.15f, 1f);
+        float thumbH = trackH * thumbRatio;
+        float maxThumbTravel = trackH - thumbH;
+        float scrollRatio = getMaxCreditsScroll() <= 0f ? 0f : creditsScroll / getMaxCreditsScroll();
+        float thumbY = trackY + maxThumbTravel * (1f - scrollRatio);
+
+        shapes.setColor(new Color(0.34f, 0.22f, 0.12f, 0.82f));
+        shapes.rect(trackX, thumbY, trackW, thumbH);
+    }
+
+    private void drawProviderIcon(IconKind kind, float x, float y, float size) {
+        Texture tex = null;
+        switch (kind) {
+            case GITHUB:
+                tex = githubBadgeTexture;
+                break;
+            case LIBGDX:
+                tex = libgdxBadgeTexture;
+                break;
+            case GRADLE:
+                tex = gradleBadgeTexture;
+                break;
+            case DREAMLO:
+                tex = dreamloBadgeTexture;
+                break;
+            default:
+                break;
+        }
+
+        if (tex != null) {
+            batch.setColor(Color.WHITE);
+            batch.draw(tex, x, y, size, size);
+            return;
+        }
+
+        if (kind == IconKind.GITHUB) {
+            font.setColor(new Color(0.16f, 0.16f, 0.16f, 1f));
+            font.draw(batch, "GH", x, y + size - 2f);
+        }
+    }
+
     @Override
     public void resize(int width, int height) {
         batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
@@ -156,8 +388,8 @@ public class CreditsScreen implements Screen {
             font.dispose();
         if (titleFont != null)
             titleFont.dispose();
-        font = createFont("fonts/font_game_screen.ttf", scaledFontSize(28));
-        titleFont = createFont("fonts/font_game_screen.ttf", scaledFontSize(52));
+        font = createFont("fonts/font_game_screen.ttf", scaledFontSize(22));
+        titleFont = createFont("fonts/font_game_screen.ttf", scaledFontSize(46));
         recalcLayout();
     }
 
@@ -183,6 +415,14 @@ public class CreditsScreen implements Screen {
             bgTexture.dispose();
         if (logoTexture != null)
             logoTexture.dispose();
+        if (githubBadgeTexture != null)
+            githubBadgeTexture.dispose();
+        if (libgdxBadgeTexture != null)
+            libgdxBadgeTexture.dispose();
+        if (gradleBadgeTexture != null)
+            gradleBadgeTexture.dispose();
+        if (dreamloBadgeTexture != null)
+            dreamloBadgeTexture.dispose();
         if (font != null)
             font.dispose();
         if (titleFont != null)
@@ -246,6 +486,17 @@ public class CreditsScreen implements Screen {
             if (button != Input.Buttons.LEFT)
                 return false;
             float y = Gdx.graphics.getHeight() - screenY;
+
+            if (linkEntries != null) {
+                for (LinkEntry entry : linkEntries) {
+                    if (entry != null && entry.url != null && entry.rect.contains(screenX, y)) {
+                        game.audio.playClick();
+                        Gdx.net.openURI(entry.url);
+                        return true;
+                    }
+                }
+            }
+
             if (backBtn.contains(screenX, y)) {
                 game.audio.playClick();
                 game.setScreen(new MainMenuScreen(game));
@@ -253,6 +504,23 @@ public class CreditsScreen implements Screen {
                 return true;
             }
             return false;
+        }
+
+        @Override
+        public boolean scrolled(float amountX, float amountY) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = Gdx.graphics.getHeight() - Gdx.input.getY();
+            if (!creditsViewport.contains(mouseX, mouseY)) {
+                return false;
+            }
+
+            float maxScroll = getMaxCreditsScroll();
+            if (maxScroll <= 0f) {
+                return false;
+            }
+
+            creditsScroll = MathUtils.clamp(creditsScroll + amountY * SCROLL_STEP, 0f, maxScroll);
+            return true;
         }
     }
 }
