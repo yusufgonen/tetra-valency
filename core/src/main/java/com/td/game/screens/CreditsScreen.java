@@ -116,8 +116,10 @@ public class CreditsScreen implements Screen {
 
         items.add(new CreditItem("Music", "Background Music (source link pending)", "", IconKind.NONE));
 
-        items.add(new CreditItem("SFX", "UI click sound effect by universfield", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Click sound effect by Universfield", "https://pixabay.com/sound-effects/", IconKind.NONE));
         items.add(new CreditItem("SFX", "Used as UI click effect", "", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Error sound effect by Lesiakover", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Used as UI click error effect", "", IconKind.NONE));
 
         items.add(new CreditItem("3D Models", "3D Models (source links pending)", "", IconKind.NONE));
 
@@ -520,7 +522,7 @@ public class CreditsScreen implements Screen {
                 return false;
             }
 
-            creditsScroll = MathUtils.clamp(creditsScroll + amountY * SCROLL_STEP, 0f, maxScroll);
+            creditsScroll = MathUtils.clamp(creditsScroll - amountY * SCROLL_STEP, 0f, maxScroll);
             return true;
         }
     }

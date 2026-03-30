@@ -5,6 +5,7 @@ import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.Timer;
 import com.td.game.map.GameMap;
 
 public class AudioManager {
@@ -17,8 +18,10 @@ public class AudioManager {
     private Music menuMusic;
     private Music mapMusic;
     private Sound clickSound;
+    private Sound errorSound;
     private float musicVolume;
     private float soundVolume;
+    private static final float CLICK_DELAY_SEC = 0.2f;
 
     public void init() {
         prefs = Gdx.app.getPreferences(PREFS_NAME);
@@ -34,6 +37,11 @@ public class AudioManager {
         }
         if (clickFile.exists()) {
             clickSound = Gdx.audio.newSound(clickFile);
+        }
+
+        FileHandle errorFile = resolveAsset("audio/sfx/ui_error.ogg");
+        if (errorFile.exists()) {
+            errorSound = Gdx.audio.newSound(errorFile);
         }
     }
 
@@ -65,7 +73,20 @@ public class AudioManager {
 
     public void playClick() {
         if (clickSound != null) {
-            clickSound.play(soundVolume * 3.0f);
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    if (clickSound != null) {
+                        clickSound.play(soundVolume * 3.0f);
+                    }
+                }
+            }, CLICK_DELAY_SEC);
+        }
+    }
+
+    public void playError() {
+        if (errorSound != null) {
+            errorSound.play(soundVolume * 2.6f);
         }
     }
 
@@ -131,6 +152,10 @@ public class AudioManager {
         if (clickSound != null) {
             clickSound.dispose();
             clickSound = null;
+        }
+        if (errorSound != null) {
+            errorSound.dispose();
+            errorSound = null;
         }
     }
 

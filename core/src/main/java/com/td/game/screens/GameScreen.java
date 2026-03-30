@@ -453,6 +453,13 @@ public class GameScreen implements Screen {
         this.uiMessageTimer = 2.0f;
     }
 
+    private void showErrorMessage(String msg) {
+        showMessage(msg);
+        if (game != null && game.audio != null) {
+            game.audio.playError();
+        }
+    }
+
     public void toggleConsole() {
         consoleOpen = !consoleOpen;
     }
@@ -2369,10 +2376,10 @@ public class GameScreen implements Screen {
             if (inventory.addOrb(element)) {
                 economyManager.spend(price);
             } else {
-                showMessage("Inventory Full!");
+                showErrorMessage("Inventory Full!");
             }
         } else {
-            showMessage("Not enough gold!");
+            showErrorMessage("Not enough gold!");
         }
     }
 
@@ -2644,7 +2651,7 @@ public class GameScreen implements Screen {
                                 buildMenu.hide();
                                 selectedTilePos = null;
                             } else {
-                                showMessage("Not enough gold!");
+                                showErrorMessage("Not enough gold!");
                             }
                         }
                     } else {
@@ -2670,7 +2677,7 @@ public class GameScreen implements Screen {
                     }
                     if (panelButton == 1) {
                         awaitingPillarOrbSelection = true;
-                        showMessage("Pick an orb from inventory!");
+                        showErrorMessage("Pick an orb from inventory!");
                         return true;
                     }
                     if (panelButton == 2) {
@@ -2678,7 +2685,7 @@ public class GameScreen implements Screen {
                         if (removed != null) {
                             if (!inventory.addOrb(removed)) {
                                 selectedPillar.placeOrb(removed);
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                             }
                         }
                         awaitingPillarOrbSelection = false;
@@ -2716,7 +2723,7 @@ public class GameScreen implements Screen {
                         Element selected = inventory.takeSelected();
                         Element old = staffUI.equipOrb(selected);
                         if (old != null && !inventory.addOrb(old)) {
-                            showMessage("Inventory Full!");
+                            showErrorMessage("Inventory Full!");
                             inventory.addOrb(selected);
                             staffUI.equipOrb(old);
                         } else {
@@ -2726,7 +2733,7 @@ public class GameScreen implements Screen {
                     } else {
                         Element orb = staffUI.removeOrb();
                         if (orb != null && !inventory.addOrb(orb)) {
-                            showMessage("Inventory Full!");
+                            showErrorMessage("Inventory Full!");
                             staffUI.equipOrb(orb);
                         } else {
                             player.clearStaffOrb();
@@ -2739,7 +2746,7 @@ public class GameScreen implements Screen {
                     if (inventory.hasSelection()) {
                         boolean willCompleteMerge = mergeBoard.hasSlot1() ^ mergeBoard.hasSlot2();
                         if (willCompleteMerge && !economyManager.canAfford(MERGE_COST)) {
-                            showMessage("Need " + MERGE_COST + "G to merge!");
+                            showErrorMessage("Need " + MERGE_COST + "G to merge!");
                             return true;
                         }
 
@@ -2755,11 +2762,11 @@ public class GameScreen implements Screen {
                         Element result = mergeBoard.tryTakeResult(screenX, flippedY);
                         if (result != null) {
                             if (!inventory.addOrb(result))
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                         } else {
                             Element inputOrb = mergeBoard.tryTakeInputOrb(screenX, flippedY);
                             if (inputOrb != null && !inventory.addOrb(inputOrb)) {
-                                showMessage("Inventory Full!");
+                                showErrorMessage("Inventory Full!");
                                 mergeBoard.placeOrb(screenX, flippedY, inputOrb);
                             }
                         }
@@ -2818,7 +2825,7 @@ public class GameScreen implements Screen {
                         float playerX = playerGridX * Constants.TILE_SIZE;
                         float playerZ = playerGridZ * Constants.TILE_SIZE;
                         if (Math.abs(playerX - sx) < 0.1f && Math.abs(playerZ - sz) < 0.1f) {
-                            showMessage("Cannot build on Alchemist tile!");
+                            showErrorMessage("Cannot build on Alchemist tile!");
                             return true;
                         }
 
@@ -2827,7 +2834,7 @@ public class GameScreen implements Screen {
                                 selectedTilePos = new Vector3(sx, 0, sz);
                                 buildMenu.show(screenX, flippedY, true);
                             } else {
-                                showMessage("Cannot build during a wave!");
+                                showErrorMessage("Cannot build during a wave!");
                             }
                         }
                         return true;
