@@ -653,6 +653,10 @@ public class Enemy implements Disposable {
         return position;
     }
 
+    public ModelInstance getModelInstance() {
+        return modelInstance;
+    }
+
     public int getReward() {
         return Math.round(reward * greedMultiplier);
     }

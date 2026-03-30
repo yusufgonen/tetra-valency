@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Vector3;
 import com.td.game.elements.Element;
+import com.td.game.pillars.Pillar;
 
 public class Projectile {
     private Vector3 position;
@@ -14,13 +15,15 @@ public class Projectile {
     private final Element element;
     private final float damage;
     private final boolean poisonCharmActive;
+    private final boolean lifeCharmActive;
+    private final Pillar sourcePillar;
     private boolean alive;
     private boolean impacted;
 
     private ModelInstance modelInstance;
 
     public Projectile(Vector3 startPos, Enemy targetEnemy, Element element, float damage, float speed, ModelInstance modelInstance,
-            boolean poisonCharmActive) {
+            boolean poisonCharmActive, boolean lifeCharmActive, Pillar sourcePillar) {
         this.position = startPos.cpy();
         this.targetEnemy = targetEnemy;
         this.targetPos = targetEnemy.getPosition().cpy();
@@ -29,6 +32,8 @@ public class Projectile {
         this.speed = speed;
         this.modelInstance = modelInstance;
         this.poisonCharmActive = poisonCharmActive;
+        this.lifeCharmActive = lifeCharmActive;
+        this.sourcePillar = sourcePillar;
         this.alive = true;
         this.impacted = false;
     }
@@ -87,6 +92,14 @@ public class Projectile {
 
     public boolean isPoisonCharmActive() {
         return poisonCharmActive;
+    }
+
+    public boolean isLifeCharmActive() {
+        return lifeCharmActive;
+    }
+
+    public Pillar getSourcePillar() {
+        return sourcePillar;
     }
 
     public Vector3 getPosition() {

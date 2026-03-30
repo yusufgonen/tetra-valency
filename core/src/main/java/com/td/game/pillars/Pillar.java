@@ -25,6 +25,8 @@ public class Pillar implements Disposable {
     private float bonusRangeMult = 1f;
     private float bonusAttackSpeedMult = 1f;
     private boolean poisonCharmActive = false;
+    private boolean lifeCharmActive = false;
+    private boolean lifeFrenzyReady = false;
 
     private float currentCooldown = 0f;
     private final float baseAttackCooldown = PillarData.BASE_ATTACK_COOLDOWN;
@@ -91,7 +93,7 @@ public class Pillar implements Disposable {
             return;
 
         // Gold pillar generates gold passively
-        if (currentElement == Element.GOLD) {
+        if (currentElement == Element.GOLD || currentElement == Element.LIFE) {
             // Gold logic handled in GameScreen or separate timer? Let's add it here.
             // But we need a reference to economyManager.
             return;
@@ -125,6 +127,12 @@ public class Pillar implements Disposable {
 
     private void attack(com.td.game.entities.Enemy target, com.badlogic.gdx.utils.Array<com.td.game.entities.Projectile> projectiles) {
         float damage = getActualDamage();
+
+        // LIFE charm frenzy: next attack after a kill deals 250% damage
+        if (lifeFrenzyReady) {
+            damage *= 2.5f;
+            lifeFrenzyReady = false;
+        }
         
         // Ramping damage for FIRE
         if (currentElement == Element.FIRE) {
@@ -149,7 +157,7 @@ public class Pillar implements Disposable {
         ModelInstance mi = new ModelInstance(projectileModel);
         mi.transform.scl(0.5f);
         projectiles.add(new com.td.game.entities.Projectile(position.cpy().add(0, 2f, 0), target, currentElement, damage, 25f, mi,
-            poisonCharmActive));
+            poisonCharmActive, lifeCharmActive, this));
     }
 
     private float getActualDamage() {
@@ -225,6 +233,19 @@ public class Pillar implements Disposable {
 
     public void setPoisonCharmActive(boolean poisonCharmActive) {
         this.poisonCharmActive = poisonCharmActive;
+    }
+
+    public void setLifeCharmActive(boolean lifeCharmActive) {
+        this.lifeCharmActive = lifeCharmActive;
+        if (!lifeCharmActive) {
+            lifeFrenzyReady = false;
+        }
+    }
+
+    public void activateLifeFrenzy() {
+        if (lifeCharmActive) {
+            lifeFrenzyReady = true;
+        }
     }
 
     public void save(com.td.game.systems.SaveData.PillarSaveData pData) {
