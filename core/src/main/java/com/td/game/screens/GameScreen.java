@@ -3229,6 +3229,15 @@ public class GameScreen implements Screen {
         float radius = staffAuraRadius * Constants.TILE_SIZE;
         Element equipped = staffUI.getEquippedElement();
 
+        int enemiesInAura = 0;
+        if (equipped == Element.LIGHT) {
+            for (com.td.game.entities.Enemy e : waveManager.getActiveEnemies()) {
+                if (e != null && e.isAlive() && !e.isAllied() && e.getPosition().dst(alchemistPos) < radius) {
+                    enemiesInAura++;
+                }
+            }
+        }
+
         for (Pillar p : pillars) {
             if (p.getPosition().dst(alchemistPos) < radius) {
                 float dmgBuff = 1f;
@@ -3238,7 +3247,7 @@ public class GameScreen implements Screen {
 
                 if (equipped != null) {
                     switch (equipped) {
-                        case LIGHT: spdBuff = 1.25f; break; // +25% Speed
+                        case LIGHT: dmgBuff = 1f + (0.04f * enemiesInAura); break; // +4% damage per enemy in aura
                         case FIRE: dmgBuff = 1.25f; break; // +25% Damage
                         case WATER: rngBuff = 1.25f; break; // +25% Range
                         case LIFE: dmgBuff = 1.5f; break; // Massive Damage Bonus
