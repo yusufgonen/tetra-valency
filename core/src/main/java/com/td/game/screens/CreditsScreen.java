@@ -113,6 +113,7 @@ public class CreditsScreen implements Screen {
 
         leftY -= SECTION_BREAK;
         leftY = drawHeading("Systems Used", leftX, leftY);
+        float systemsStartY = leftY;
         leftY = drawSystemItem("Java", "https://www.java.com/", leftX, leftY);
         leftY = drawSystemItem("libGDX", "https://libgdx.com/", leftX, leftY);
         leftY = drawSystemItem("LWJGL", "https://www.lwjgl.org/", leftX, leftY);
@@ -129,22 +130,21 @@ public class CreditsScreen implements Screen {
         rightY = drawHeading("SFX", rightX, rightY);
         rightY = drawLine("- Source Website:", rightX, rightY,
             "https://pixabay.com/sound-effects/", BODY_COLOR);
-        rightY = drawLine("- Authors: Universfield, Lesiakover, floraphonic", rightX, rightY, null, CONTRIBUTOR_COLOR);
+        rightY = drawAuthorLine("- Authors: ", "Universfield, Lesiakover, floraphonic", rightX, rightY);
         rightY = drawLine("  FoxBoy Tails, EAGLAXLE, Yodguard, AudioPapkin", rightX, rightY, null, CONTRIBUTOR_COLOR);
-        rightY = drawLine("  Prmodrai, freesound_community", rightX, rightY, null, BODY_COLOR);
+        rightY = drawLine("  Prmodrai, freesound_community", rightX, rightY, null, CONTRIBUTOR_COLOR);
 
         rightY -= SECTION_BREAK;
         rightY = drawHeading("3D Models", rightX, rightY);
         rightY = drawLine("- Quaternius", rightX, rightY, "https://poly.pizza/u/Quaternius", CONTRIBUTOR_COLOR);
 
-        rightY -= SECTION_BREAK;
-        rightY = drawHeading("Systems Used (Cont.)", rightX, rightY);
-        rightY = drawSystemItem("Dreamlo", "http://dreamlo.com/", rightX, rightY);
-        rightY = drawSystemItem("GitHub", "https://github.com/", rightX, rightY);
-        rightY = drawSystemItem("Microsoft Paint", "https://apps.microsoft.com/detail/9pcfs5b6t72h", rightX, rightY);
-        rightY = drawSystemItem("TTSMaker", "https://ttsmaker.com/", rightX, rightY);
-        rightY = drawSystemItem("Pixilart", "https://www.pixilart.com/", rightX, rightY);
-        rightY = drawSystemItem("Canva", "https://www.canva.com/", rightX, rightY);
+        float rightSystemsY = systemsStartY;
+        rightSystemsY = drawSystemItem("Dreamlo", "http://dreamlo.com/", rightX, rightSystemsY);
+        rightSystemsY = drawSystemItem("GitHub", "https://github.com/", rightX, rightSystemsY);
+        rightSystemsY = drawSystemItem("Microsoft Paint", "https://apps.microsoft.com/detail/9pcfs5b6t72h", rightX, rightSystemsY);
+        rightSystemsY = drawSystemItem("TTSMaker", "https://ttsmaker.com/", rightX, rightSystemsY);
+        rightSystemsY = drawSystemItem("Pixilart", "https://www.pixilart.com/", rightX, rightSystemsY);
+        rightSystemsY = drawSystemItem("Canva", "https://www.canva.com/", rightX, rightSystemsY);
     }
 
     private float drawHeading(String text, float x, float y) {
@@ -171,6 +171,13 @@ public class CreditsScreen implements Screen {
         drawLeft(font, prefix, x, y, BODY_COLOR);
         glyph.setText(font, prefix);
         drawLeft(font, author, x + glyph.width, y, CONTRIBUTOR_COLOR);
+        return y - (LINE_GAP * 1.1f);
+    }
+
+    private float drawAuthorLine(String prefix, String names, float x, float y) {
+        drawLeft(font, prefix, x, y, BODY_COLOR);
+        glyph.setText(font, prefix);
+        drawLeft(font, names, x + glyph.width, y, CONTRIBUTOR_COLOR);
         return y - (LINE_GAP * 1.1f);
     }
 
