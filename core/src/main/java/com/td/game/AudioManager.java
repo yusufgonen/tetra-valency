@@ -19,6 +19,7 @@ public class AudioManager {
     private Music mapMusic;
     private Sound clickSound;
     private Sound errorSound;
+    private Sound pauseToggleSound;
     private float musicVolume;
     private float soundVolume;
     private static final float CLICK_DELAY_SEC = 0.2f;
@@ -42,6 +43,11 @@ public class AudioManager {
         FileHandle errorFile = resolveAsset("audio/sfx/ui_error.ogg");
         if (errorFile.exists()) {
             errorSound = Gdx.audio.newSound(errorFile);
+        }
+
+        FileHandle pauseToggleFile = resolveAsset("audio/sfx/pause_toggle.ogg");
+        if (pauseToggleFile.exists()) {
+            pauseToggleSound = Gdx.audio.newSound(pauseToggleFile);
         }
     }
 
@@ -87,6 +93,12 @@ public class AudioManager {
     public void playError() {
         if (errorSound != null) {
             errorSound.play(soundVolume * 2.6f);
+        }
+    }
+
+    public void playPauseToggle() {
+        if (pauseToggleSound != null) {
+            pauseToggleSound.play(soundVolume * 2.4f);
         }
     }
 
@@ -156,6 +168,10 @@ public class AudioManager {
         if (errorSound != null) {
             errorSound.dispose();
             errorSound = null;
+        }
+        if (pauseToggleSound != null) {
+            pauseToggleSound.dispose();
+            pauseToggleSound = null;
         }
     }
 

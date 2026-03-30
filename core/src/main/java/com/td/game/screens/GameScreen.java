@@ -453,6 +453,16 @@ public class GameScreen implements Screen {
         this.uiMessageTimer = 2.0f;
     }
 
+    private void setPaused(boolean value) {
+        if (paused == value) {
+            return;
+        }
+        paused = value;
+        if (game != null && game.audio != null) {
+            game.audio.playPauseToggle();
+        }
+    }
+
     private void showErrorMessage(String msg) {
         showMessage(msg);
         if (game != null && game.audio != null) {
@@ -2395,7 +2405,7 @@ public class GameScreen implements Screen {
                 return true;
             }
             if (keycode == Input.Keys.ESCAPE || keycode == Input.Keys.P) {
-                paused = !paused;
+                setPaused(!paused);
                 return true;
             }
             if (augmentChoiceActive) {
@@ -2508,7 +2518,7 @@ public class GameScreen implements Screen {
 
                 if (isInRect(screenX, flippedY, btnX, resumeY, btnW, btnH)) {
                     game.audio.playClick();
-                    paused = false;
+                    setPaused(false);
                 } else if (isInRect(screenX, flippedY, btnX, optionsY, btnW, btnH)) {
                     game.audio.playClick();
                     game.setScreen(new OptionsScreen(game, (com.badlogic.gdx.Screen) GameScreen.this));
@@ -2603,7 +2613,7 @@ public class GameScreen implements Screen {
                     return true;
                 }
                 if (isInRect(screenX, flippedY, pauseIconX, pauseIconY, pauseIconSize, pauseIconSize)) {
-                    paused = !paused;
+                    setPaused(!paused);
                     return true;
                 }
                 if (isInRect(screenX, flippedY, speedIconX, speedIconY, speedIconSize, speedIconSize)) {

@@ -94,10 +94,6 @@ public class CreditsScreen implements Screen {
         }
         logoTexture = loadTextureSafe("ui/cosmovision.png");
         githubBadgeTexture = loadTextureSafe("credits/github.png");
-        if (githubBadgeTexture == null) {
-            // LibGDX textures do not render SVG directly; keep fallback text badge if PNG is absent.
-            githubBadgeTexture = loadTextureSafe("credits/github.svg");
-        }
         libgdxBadgeTexture = loadTextureSafe("credits/libgdx.png");
         gradleBadgeTexture = loadTextureSafe("credits/gradle.png");
         dreamloBadgeTexture = loadTextureSafe("credits/dreamlo.png");
@@ -120,7 +116,9 @@ public class CreditsScreen implements Screen {
         items.add(new CreditItem("SFX", "Used as UI click effect", "", IconKind.NONE));
         items.add(new CreditItem("SFX", "Error sound effect by Lesiakover", "https://pixabay.com/sound-effects/", IconKind.NONE));
         items.add(new CreditItem("SFX", "Used as UI click error effect", "", IconKind.NONE));
-
+        items.add(new CreditItem("SFX", "Casual Click Pop UI 3 sound effect by floraphonic", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Used as pause toggle effect", "", IconKind.NONE));
+        
         items.add(new CreditItem("3D Models", "3D Models (source links pending)", "", IconKind.NONE));
 
         items.add(new CreditItem("Tools/Libraries", "GitHub", "https://github.com/", IconKind.GITHUB));
@@ -522,7 +520,7 @@ public class CreditsScreen implements Screen {
                 return false;
             }
 
-            creditsScroll = MathUtils.clamp(creditsScroll - amountY * SCROLL_STEP, 0f, maxScroll);
+            creditsScroll = MathUtils.clamp(creditsScroll + amountY * SCROLL_STEP, 0f, maxScroll);
             return true;
         }
     }
