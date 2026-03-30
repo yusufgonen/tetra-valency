@@ -160,8 +160,14 @@ public class ModelFactory implements Disposable {
                 // Ice: Shard-like box
                 return modelBuilder.createBox(0.3f, 1.0f, 0.3f, new Material(ColorAttribute.createDiffuse(color)), attributes);
             case LIGHT:
-                // Light: Beam/Long cylinder
-                return modelBuilder.createCylinder(0.2f, 10.0f, 0.2f, 8, new Material(ColorAttribute.createDiffuse(color)), attributes);
+                // Light: Bright grey-yellow-white sphere (same size as poison projectile)
+                Color lightColor = new Color(0.92f, 0.90f, 0.78f, 0.95f);
+                return modelBuilder.createSphere(0.9f, 0.9f, 0.9f, 16, 16,
+                    new Material(
+                        ColorAttribute.createDiffuse(lightColor),
+                        ColorAttribute.createEmissive(0.30f, 0.28f, 0.20f, 1f),
+                        new BlendingAttribute(0.85f)),
+                    attributes);
             case STEAM:
                 // Steam: Transparent grey sphere
                 Color steamColor = new Color(0.7f, 0.7f, 0.7f, 0.6f);

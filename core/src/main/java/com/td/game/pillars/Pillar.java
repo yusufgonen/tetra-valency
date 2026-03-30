@@ -137,22 +137,17 @@ public class Pillar implements Disposable {
             }
         }
 
-        // Special case for LIGHT: Beam (handled as projectile for now for visual consistency, or instant effect)
+        // LIGHT: Damage scales with target's current HP (higher HP -> higher hit)
         if (currentElement == Element.LIGHT) {
-            float hpPercent = target.getHealth() / target.getMaxHealth();
-            float bonusDamage = damage * (hpPercent * 2f); 
-            target.takeDamage(damage + bonusDamage, currentElement);
-            // We can still spawn a fast beam-like projectile
+            float hpPercent = target.getHealth() / Math.max(1f, target.getMaxHealth());
+            float lightMultiplier = 0.5f + (hpPercent * 2.0f);
+            damage *= lightMultiplier;
         }
 
         // Spawn Projectile
         Model projectileModel = modelFactory.getProjectileModel(currentElement);
         ModelInstance mi = new ModelInstance(projectileModel);
-        if (currentElement == Element.LIGHT) {
-            mi.transform.scl(0.1f, 1.0f, 0.1f); // Thin beam
-        } else {
-            mi.transform.scl(0.5f);
-        }
+        mi.transform.scl(0.5f);
         projectiles.add(new com.td.game.entities.Projectile(position.cpy().add(0, 2f, 0), target, currentElement, damage, 25f, mi,
             poisonCharmActive));
     }
