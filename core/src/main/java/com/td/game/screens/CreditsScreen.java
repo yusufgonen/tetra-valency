@@ -43,10 +43,12 @@ public class CreditsScreen implements Screen {
     private Array<LinkEntry> linkEntries;
     private float creditsScroll;
     private float creditsContentHeight;
+    private float creditsAutoScroll;
     private static final float SCROLL_STEP = 34f;
     private static final float CREDITS_TOP_PADDING = 12f;
     private static final float CREDITS_BOTTOM_PADDING = 180f;
     private static final float EXTRA_SCROLL_ALLOWANCE = 120f;
+    private static final float AUTO_SCROLL_SPEED = 28f;
 
     private enum IconKind {
         NONE, GITHUB, LIBGDX, GRADLE, DREAMLO
@@ -135,6 +137,10 @@ public class CreditsScreen implements Screen {
         items.add(new CreditItem("SFX", "Used as attack effect", "", IconKind.NONE));
         items.add(new CreditItem("SFX", "Crushing shells of eggs sound effect by AudioPapkin", "https://pixabay.com/sound-effects/", IconKind.NONE));
         items.add(new CreditItem("SFX", "Used as core hit effect", "", IconKind.NONE));
+        items.add(new CreditItem("SFX", "- Damage blowhole sound effect by Prmodrai", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Used as enemy hit effect", "", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Dramatic Death Collapse sound effect by Universfield", "https://pixabay.com/sound-effects/", IconKind.NONE));
+        items.add(new CreditItem("SFX", "Used as enemy death effect", "", IconKind.NONE));
         items.add(new CreditItem("3D Models", "3D Models (source links pending)", "", IconKind.NONE));
         
         
@@ -176,6 +182,7 @@ public class CreditsScreen implements Screen {
 
         creditsContentHeight = calculateCreditsContentHeight();
         creditsScroll = MathUtils.clamp(creditsScroll, 0f, getMaxCreditsScroll());
+        creditsAutoScroll = MathUtils.clamp(creditsAutoScroll, 0f, getMaxCreditsScroll());
     }
 
     @Override
@@ -190,6 +197,8 @@ public class CreditsScreen implements Screen {
             batch.draw(bgTexture, 0, 0, w, h);
             batch.end();
         }
+
+        updateAutoCreditsScroll(delta);
 
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         drawRect(rootPanel, new Color(0.89f, 0.67f, 0.26f, 0.94f));
@@ -265,7 +274,7 @@ public class CreditsScreen implements Screen {
         linkEntries.clear();
 
         float x = creditsViewport.x + 12f;
-        float y = creditsViewport.y + creditsViewport.height - CREDITS_TOP_PADDING - creditsScroll;
+        float y = creditsViewport.y + creditsViewport.height - CREDITS_TOP_PADDING - creditsAutoScroll;
         float iconSize = 18f;
         float categoryGap = 22f;
         float labelGap = 20f;
@@ -338,6 +347,19 @@ public class CreditsScreen implements Screen {
 
     private float getMaxCreditsScroll() {
         return Math.max(0f, creditsContentHeight - creditsViewport.height + EXTRA_SCROLL_ALLOWANCE);
+    }
+
+    private void updateAutoCreditsScroll(float delta) {
+        float maxScroll = getMaxCreditsScroll();
+        if (maxScroll <= 0f) {
+            creditsAutoScroll = 0f;
+            return;
+        }
+
+        creditsAutoScroll += delta * AUTO_SCROLL_SPEED;
+        if (creditsAutoScroll > maxScroll) {
+            creditsAutoScroll = 0f;
+        }
     }
 
     private boolean isVisibleY(float baselineY) {
@@ -531,7 +553,7 @@ public class CreditsScreen implements Screen {
                 return false;
             }
 
-            creditsScroll = MathUtils.clamp(creditsScroll + amountY * SCROLL_STEP, 0f, maxScroll);
+            creditsAutoScroll = MathUtils.clamp(creditsAutoScroll + amountY * SCROLL_STEP, 0f, maxScroll);
             return true;
         }
     }

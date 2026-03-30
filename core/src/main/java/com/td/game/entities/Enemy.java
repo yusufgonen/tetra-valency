@@ -1,6 +1,8 @@
 package com.td.game.entities;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -8,15 +10,22 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.TimeUtils;
 import com.td.game.elements.Element;
 import com.td.game.utils.Constants;
 
 public class Enemy implements Disposable {
 
     private static final float POISON_BURST_DURATION = 0.42f;
+    private static Sound enemyHitSound;
+    private static boolean enemyHitLoadAttempted;
+    private static long enemyHitLastPlayedMs;
+    private static long enemyHitBurstWindowStartMs;
+    private static int enemyHitBurstCount;
 
     protected Vector3 position;
     protected float health;
@@ -523,11 +532,84 @@ public class Enemy implements Disposable {
         }
 
         health -= actualDamage;
+        if (actualDamage > 0f) {
+            playEnemyHitSfxThrottled();
+        }
 
         if (health <= 0) {
             health = 0;
             alive = false;
         }
+    }
+
+    private static void playEnemyHitSfxThrottled() {
+        if (!ensureEnemyHitSoundLoaded()) {
+            return;
+        }
+
+        long nowMs = TimeUtils.millis();
+
+        // Hard gate to prevent sample stacking in the same frame burst.
+        if (nowMs - enemyHitLastPlayedMs < 45L) {
+            return;
+        }
+
+        // Sliding burst window so dense waves do not spam the same SFX constantly.
+        if (nowMs - enemyHitBurstWindowStartMs > 320L) {
+            enemyHitBurstWindowStartMs = nowMs;
+            enemyHitBurstCount = 0;
+        }
+        enemyHitBurstCount++;
+
+        float playChance = 1f;
+        if (enemyHitBurstCount > 4) {
+            playChance = 0.62f;
+        }
+        if (enemyHitBurstCount > 8) {
+            playChance = 0.33f;
+        }
+
+        if (!MathUtils.randomBoolean(playChance)) {
+            return;
+        }
+
+        enemyHitLastPlayedMs = nowMs;
+        enemyHitSound.play(0.8f);
+    }
+
+    private static boolean ensureEnemyHitSoundLoaded() {
+        if (enemyHitSound != null) {
+            return true;
+        }
+        if (enemyHitLoadAttempted) {
+            return false;
+        }
+
+        enemyHitLoadAttempted = true;
+        FileHandle f = resolveAsset("audio/sfx/enemy_hit.ogg");
+        if (!f.exists()) {
+            return false;
+        }
+
+        try {
+            enemyHitSound = Gdx.audio.newSound(f);
+            return true;
+        } catch (Exception e) {
+            Gdx.app.log("Enemy", "enemy_hit load failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static FileHandle resolveAsset(String name) {
+        FileHandle f = Gdx.files.internal(name);
+        if (f.exists()) {
+            return f;
+        }
+        f = Gdx.files.internal("assets/" + name);
+        if (f.exists()) {
+            return f;
+        }
+        return Gdx.files.internal(name);
     }
 
     public void applySlow(float duration, float multiplier) {
