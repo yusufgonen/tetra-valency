@@ -2487,6 +2487,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
         @Override
         public boolean keyDown(int keycode) {
+            if (keycode == Input.Keys.GRAVE) {
+                consoleMenu.toggle();
+                return true;
+            }
             if (consoleMenu.handleKeyDown(keycode, GameScreen.this)) {
                 return true;
             }
