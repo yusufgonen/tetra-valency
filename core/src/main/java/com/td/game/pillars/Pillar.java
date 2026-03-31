@@ -36,6 +36,7 @@ public class Pillar implements Disposable {
     private final float baseDamage = PillarData.BASE_DAMAGE;
     private float goldGenerationTimer = 0f;
     private int pendingGoldGenerated = 0;
+    private float earthTickTimer = 0f;
 
     private Enemy focusTarget = null;
     private float focusTimer = 0f;
@@ -121,6 +122,16 @@ public class Pillar implements Disposable {
         if (currentElement == Element.LIFE) {
             return;
         }
+        if (currentElement == Element.EARTH) {
+            earthTickTimer += delta;
+            while (earthTickTimer >= EarthAttack.TICK_INTERVAL) {
+                earthTickTimer -= EarthAttack.TICK_INTERVAL;
+                EarthAttack.applyQuakeInRange(new AttackContext(this, null, enemies, delta), getActualDamage());
+            }
+            return;
+        } else {
+            earthTickTimer = 0f;
+        }
 
         currentCooldown -= delta;
 
@@ -180,11 +191,6 @@ public class Pillar implements Disposable {
             damage = LightAttack.scaleByCurrentHp(damage, target);
         }
 
-        if (currentElement == Element.EARTH) {
-            EarthAttack.applyStunInRange(new AttackContext(this, target, enemies, 0f));
-            return;
-        }
-
         
         Model projectileModel = modelFactory.getProjectileModel(currentElement);
         ModelInstance mi = new ModelInstance(projectileModel);
@@ -200,9 +206,6 @@ public class Pillar implements Disposable {
 
     private float getActualAttackCooldown() {
         float defaultCooldown = baseAttackCooldown / (type.getAttackSpeedMult() * bonusAttackSpeedMult);
-        if (currentElement == Element.EARTH) {
-            return EarthAttack.getAttackCooldown(defaultCooldown);
-        }
         return defaultCooldown;
     }
 

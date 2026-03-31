@@ -764,6 +764,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         com.badlogic.gdx.graphics.glutils.HdpiUtils.glViewport(0, 0, screenWidth, screenHeight);
         uiBatch.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
 
+        renderEarthquakeFields(mapAreaWidth, screenHeight);
+
         if (hoveredPillar != null) {
             RangeOverlayRenderer.drawPillarRange(uiShapeRenderer, camera, hoveredPillar, mapAreaWidth, screenHeight);
         }
@@ -819,6 +821,43 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         renderMessages(screenWidth, screenHeight);
         renderConsoleOverlay(screenWidth, screenHeight);
 
+    }
+
+    private void renderEarthquakeFields(int mapAreaWidth, int screenHeight) {
+        if (pillars == null || pillars.size == 0) {
+            return;
+        }
+        float time = globalTimer;
+        float pulseA = 0.75f + 0.25f * MathUtils.sin(time * 4f);
+        float pulseB = 0.8f + 0.2f * MathUtils.sin(time * 6.5f + 1.3f);
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        for (Pillar pillar : pillars) {
+            if (pillar == null || pillar.getCurrentElement() != Element.EARTH) {
+                continue;
+            }
+            float range = pillar.getAttackRange();
+            Vector3 center = pillar.getPosition();
+            Vector3 c = new Vector3(center.x, center.y, center.z);
+            Vector3 edge = new Vector3(center.x + range, center.y, center.z);
+            camera.project(c, 0, 0, mapAreaWidth, screenHeight);
+            camera.project(edge, 0, 0, mapAreaWidth, screenHeight);
+            float radius = c.dst(edge);
+            float jitter = 1.6f + 1.2f * MathUtils.sin(time * 8.5f + range);
+            float cx = c.x + MathUtils.sin(time * 10.2f + range) * jitter;
+            float cy = c.y + MathUtils.cos(time * 11.1f + range) * jitter;
+
+            uiShapeRenderer.setColor(0.55f, 0.32f, 0.16f, 0.18f + 0.12f * pulseA);
+            uiShapeRenderer.circle(cx, cy, radius, 80);
+            uiShapeRenderer.setColor(0.72f, 0.48f, 0.22f, 0.14f + 0.10f * pulseB);
+            uiShapeRenderer.circle(cx, cy, radius * 0.88f, 80);
+            uiShapeRenderer.setColor(0.35f, 0.2f, 0.1f, 0.12f);
+            uiShapeRenderer.circle(cx, cy, radius * 0.65f, 70);
+        }
+        uiShapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
     private void renderPoisonBurstEffects(int mapAreaWidth, int screenHeight) {
