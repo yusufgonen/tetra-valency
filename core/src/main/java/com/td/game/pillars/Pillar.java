@@ -32,6 +32,8 @@ public class Pillar implements Disposable {
     private float currentCooldown = 0f;
     private final float baseAttackCooldown = PillarData.BASE_ATTACK_COOLDOWN;
     private final float baseDamage = PillarData.BASE_DAMAGE;
+    private float goldGenerationTimer = 0f;
+    private int pendingGoldGenerated = 0;
 
     private Enemy focusTarget = null;
     private float focusTimer = 0f;
@@ -68,6 +70,9 @@ public class Pillar implements Disposable {
         if (element == null)
             return false;
 
+        goldGenerationTimer = 0f;
+        pendingGoldGenerated = 0;
+
         if (!active) {
             firstOrb = element.isPrime() ? element : null;
             currentElement = element;
@@ -89,14 +94,29 @@ public class Pillar implements Disposable {
         return true;
     }
 
-    public void update(float delta, com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies, com.badlogic.gdx.utils.Array<com.td.game.entities.Projectile> projectiles) {
+    public void update(float delta, com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies,
+            com.badlogic.gdx.utils.Array<com.td.game.entities.Projectile> projectiles, boolean waveInProgress) {
         if (!active || currentElement == null)
             return;
 
-        
-        if (currentElement == Element.GOLD || currentElement == Element.LIFE) {
-            
-            
+        if (currentElement == Element.GOLD) {
+            if (!waveInProgress) {
+                goldGenerationTimer = 0f;
+                return;
+            }
+
+            goldGenerationTimer += delta;
+            while (goldGenerationTimer >= PillarData.GOLD_GENERATION_INTERVAL) {
+                goldGenerationTimer -= PillarData.GOLD_GENERATION_INTERVAL;
+                pendingGoldGenerated += PillarData.GOLD_GENERATION_AMOUNT;
+            }
+            return;
+        }
+
+        goldGenerationTimer = 0f;
+        pendingGoldGenerated = 0;
+
+        if (currentElement == Element.LIFE) {
             return;
         }
 
@@ -109,6 +129,12 @@ public class Pillar implements Disposable {
                 currentCooldown = getActualAttackCooldown();
             }
         }
+    }
+
+    public int consumeGeneratedGold() {
+        int generatedGold = pendingGoldGenerated;
+        pendingGoldGenerated = 0;
+        return generatedGold;
     }
 
     private com.td.game.entities.Enemy findTarget(com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies) {
@@ -207,6 +233,8 @@ public class Pillar implements Disposable {
             return null;
         }
         Element removed = currentElement;
+        goldGenerationTimer = 0f;
+        pendingGoldGenerated = 0;
         currentElement = null;
         firstOrb = null;
         active = false;
@@ -268,6 +296,8 @@ public class Pillar implements Disposable {
         this.bonusDamageMult = pData.bonusDamageMult;
         this.bonusRangeMult = pData.bonusRangeMult;
         this.bonusAttackSpeedMult = pData.bonusAttackSpeedMult;
+        this.goldGenerationTimer = 0f;
+        this.pendingGoldGenerated = 0;
         updateModel();
     }
 

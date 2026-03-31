@@ -2457,14 +2457,15 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         
         for (Pillar pillar : pillars) {
             int projectileCountBefore = activeProjectiles.size;
-            pillar.update(delta, waveManager.getActiveEnemies(), activeProjectiles);
+            pillar.update(delta, waveManager.getActiveEnemies(), activeProjectiles, waveManager.isWaveInProgress());
+            int goldGenerated = pillar.consumeGeneratedGold();
             int spawnedProjectileCount = activeProjectiles.size - projectileCountBefore;
             for (int i = 0; i < spawnedProjectileCount; i++) {
                 game.audio.playTowerAttackBasic();
             }
-            if (pillar.isActive() && pillar.getCurrentElement() == Element.GOLD) {
-                
-                economyManager.earn(2.0f * delta);
+            if (goldGenerated > 0) {
+                economyManager.earn(goldGenerated);
+                game.audio.playGoldGain();
             }
         }
 
