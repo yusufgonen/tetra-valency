@@ -217,6 +217,18 @@ public class ModelFactory implements Disposable {
         return loadModel("3dmodels/Demon.g3db");
     }
 
+    public Model loadPinkBlobLifeModel() {
+        return loadModel("3dmodels/life/PinkBlob_LIFE.g3db");
+    }
+
+    public Model loadGolemLifeModel() {
+        return loadModel("3dmodels/life/Golem_LIFE.g3db");
+    }
+
+    public Model loadBatLifeModel() {
+        return loadModel("3dmodels/life/Glub_LIFE.g3db");
+    }
+
     private FileHandle resolveAsset(String name) {
         FileHandle direct = Gdx.files.internal(name);
         if (direct.exists()) {

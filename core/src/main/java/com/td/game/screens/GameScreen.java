@@ -101,6 +101,9 @@ public class GameScreen implements Screen {
     private Model golemModel;
     private Model batModel;
     private Model pinkBlobModel;
+    private Model golemLifeModel;
+    private Model batLifeModel;
+    private Model pinkBlobLifeModel;
     private float coreBaseX;
     private float coreBaseY;
     private float coreBaseZ;
@@ -480,6 +483,9 @@ public class GameScreen implements Screen {
         golemModel = modelFactory.loadGolemModel();
         batModel = modelFactory.loadBatModel();
         pinkBlobModel = modelFactory.loadPinkBlobModel();
+        golemLifeModel = modelFactory.loadGolemLifeModel();
+        batLifeModel = modelFactory.loadBatLifeModel();
+        pinkBlobLifeModel = modelFactory.loadPinkBlobLifeModel();
     }
 
     public void showMessage(String msg) {
@@ -3699,13 +3705,13 @@ public class GameScreen implements Screen {
             ally.setModel(demonModel);
         } else if (deadEnemy instanceof com.td.game.entities.GolemEnemy) {
             ally = new com.td.game.entities.GolemEnemy(deadEnemy.getMaxHealth() * 0.5f, 1.0f, 0);
-            ally.setModel(golemModel);
+            ally.setModel(golemLifeModel != null ? golemLifeModel : golemModel);
         } else if (deadEnemy instanceof com.td.game.entities.BatEnemy) {
             ally = new com.td.game.entities.BatEnemy(deadEnemy.getMaxHealth() * 0.5f, 1.0f, 0);
-            ally.setModel(batModel);
+            ally.setModel(batLifeModel != null ? batLifeModel : batModel);
         } else {
             ally = new com.td.game.entities.PinkBlobEnemy(deadEnemy.getMaxHealth() * 0.5f, 1.0f, 0);
-            ally.setModel(pinkBlobModel);
+            ally.setModel(pinkBlobLifeModel != null ? pinkBlobLifeModel : pinkBlobModel);
         }
 
         
@@ -3731,7 +3737,9 @@ public class GameScreen implements Screen {
         }
 
         for (com.badlogic.gdx.graphics.g3d.Material mat : ally.getModelInstance().materials) {
-            mat.set(TextureAttribute.createDiffuse(lifeRecallTexture));
+            if (!mat.has(TextureAttribute.Diffuse)) {
+                mat.set(TextureAttribute.createDiffuse(lifeRecallTexture));
+            }
             mat.set(ColorAttribute.createEmissive(0.06f, 0.30f, 0.10f, 1f));
         }
     }
