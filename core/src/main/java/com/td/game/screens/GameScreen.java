@@ -717,71 +717,46 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         uiBatch.end();
 
         com.badlogic.gdx.graphics.glutils.HdpiUtils.glViewport(0, 0, mapAreaWidth, screenHeight);
-        modelBatch.begin(camera);
-        gameMap.render(modelBatch, environment);
-
-        if (buildMenu.isActive() && selectedTilePos != null) {
-            ModelInstance highlight = validHighlight;
-            highlight.transform.setToTranslation(selectedTilePos.x, 0.05f, selectedTilePos.z);
-            modelBatch.render(highlight, environment);
-        }
-
-        for (Pillar pillar : pillars)
-            pillar.render(modelBatch, environment);
-
-        for (com.td.game.entities.Projectile proj : activeProjectiles) {
-            proj.render(modelBatch, environment);
-        }
-
-        
-        for (com.td.game.entities.Enemy enemy : waveManager.getActiveEnemies()) {
-            enemy.render(modelBatch, environment);
-        }
-
-        player.render(modelBatch, environment);
-
-        if (gateInstance != null)
-            modelBatch.render(gateInstance, environment);
-        if (coreSphereInstance != null) {
-
-            if (coreFlashTimer > 0) {
-                float t = Math.min(coreFlashTimer / 0.4f, 1f);
-                Color flash = new Color(0.6f + 0.4f * t, 0.2f * (1f - t), 0.85f * (1f - t), 1f);
-                coreSphereInstance.materials.get(0).set(ColorAttribute.createDiffuse(flash));
-                coreFlashTimer -= Gdx.graphics.getDeltaTime();
-                if (coreFlashTimer <= 0) {
-                    coreSphereInstance.materials.get(0).set(
-                            ColorAttribute.createDiffuse(new Color(0.6f, 0.2f, 0.85f, 1f)));
-                }
-            }
-            modelBatch.render(coreSphereInstance, environment);
-        }
-
-        modelBatch.end();
+        coreFlashTimer = GameWorldRenderer.renderWorld(
+                modelBatch,
+                camera,
+                gameMap,
+                environment,
+                buildMenu,
+                selectedTilePos,
+                validHighlight,
+                pillars,
+                activeProjectiles,
+                waveManager.getActiveEnemies(),
+                player,
+                gateInstance,
+                coreSphereInstance,
+                coreFlashTimer
+        );
 
         uiShapeRenderer.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
 
         com.badlogic.gdx.graphics.glutils.HdpiUtils.glViewport(0, 0, screenWidth, screenHeight);
         uiBatch.getProjectionMatrix().setToOrtho2D(0, 0, screenWidth, screenHeight);
 
-        renderEarthquakeFields(mapAreaWidth, screenHeight);
-
-        if (hoveredPillar != null) {
-            RangeOverlayRenderer.drawPillarRange(uiShapeRenderer, camera, hoveredPillar, mapAreaWidth, screenHeight);
-        }
-
-        if (hoveringAlchemist) {
-            RangeOverlayRenderer.drawAuraRange(uiShapeRenderer, camera, player, pillars, staffAuraRadius, uiScale,
-                    mapAreaWidth, screenHeight, staffUI.getEquippedElement());
-        }
-
-        uiBatch.begin();
-        for (com.td.game.entities.Effect effect : activeEffects) {
-            effect.render(uiBatch, camera, mapAreaWidth, screenHeight);
-        }
-        uiBatch.end();
-
-        renderPoisonBurstEffects(mapAreaWidth, screenHeight);
+        OverlayRenderer.render(
+                uiShapeRenderer,
+                uiBatch,
+                camera,
+                pillars,
+                hoveredPillar,
+                hoveringAlchemist,
+                player,
+                staffAuraRadius,
+                uiScale,
+                staffUI.getEquippedElement(),
+                activeEffects,
+                waveManager.getActiveEnemies(),
+                poisonBurstTexture,
+                globalTimer,
+                mapAreaWidth,
+                screenHeight
+        );
 
         renderMinimalHud(screenWidth, screenHeight, mapAreaWidth);
         renderMessages(screenWidth, screenHeight);
@@ -823,106 +798,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
     }
 
-    private void renderEarthquakeFields(int mapAreaWidth, int screenHeight) {
-        if (pillars == null || pillars.size == 0) {
-            return;
-        }
-        float time = globalTimer;
-        float pulseA = 0.65f + 0.35f * MathUtils.sin(time * 4f);
-        float pulseB = 0.7f + 0.3f * MathUtils.sin(time * 6.2f + 1.3f);
-
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        Gdx.gl.glLineWidth(2f);
-        for (Pillar pillar : pillars) {
-            if (pillar == null || pillar.getCurrentElement() != Element.EARTH) {
-                continue;
-            }
-            float radius = pillar.getAttackRange();
-            Vector3 center = pillar.getPosition();
-            int segments = 100;
-            float y = 0.2f;
-
-            uiShapeRenderer.setColor(0.45f, 0.22f, 0.1f, 0.55f + 0.20f * pulseA);
-            for (int i = 0; i < segments; i++) {
-                float a0 = MathUtils.PI2 * i / segments;
-                float a1 = MathUtils.PI2 * (i + 1) / segments;
-                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * radius, y, center.z + MathUtils.sin(a0) * radius);
-                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * radius, y, center.z + MathUtils.sin(a1) * radius);
-                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
-                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
-                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
-            }
-
-            float innerA = radius * (0.82f + 0.03f * MathUtils.sin(time * 7.2f));
-            uiShapeRenderer.setColor(0.65f, 0.35f, 0.15f, 0.48f + 0.18f * pulseB);
-            for (int i = 0; i < segments; i++) {
-                float a0 = MathUtils.PI2 * i / segments;
-                float a1 = MathUtils.PI2 * (i + 1) / segments;
-                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * innerA, y, center.z + MathUtils.sin(a0) * innerA);
-                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * innerA, y, center.z + MathUtils.sin(a1) * innerA);
-                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
-                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
-                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
-            }
-
-            float innerB = radius * (0.62f + 0.025f * MathUtils.sin(time * 9.1f + 1.2f));
-            uiShapeRenderer.setColor(0.35f, 0.16f, 0.08f, 0.42f);
-            for (int i = 0; i < segments; i++) {
-                float a0 = MathUtils.PI2 * i / segments;
-                float a1 = MathUtils.PI2 * (i + 1) / segments;
-                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * innerB, y, center.z + MathUtils.sin(a0) * innerB);
-                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * innerB, y, center.z + MathUtils.sin(a1) * innerB);
-                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
-                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
-                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
-            }
-        }
-        uiShapeRenderer.end();
-        Gdx.gl.glLineWidth(1f);
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-    }
-
-    private void renderPoisonBurstEffects(int mapAreaWidth, int screenHeight) {
-        if (poisonBurstTexture == null) {
-            return;
-        }
-
-        uiBatch.begin();
-        for (com.td.game.entities.Enemy enemy : waveManager.getActiveEnemies()) {
-            if (!enemy.isAlive() || !enemy.isPoisonBurstActive()) {
-                continue;
-            }
-
-            Vector3 enemyPos = enemy.getPosition();
-            float yOffset = enemy.isFlying() ? 3.4f : 2.8f;
-                Vector3 screenPos = camera.project(new Vector3(enemyPos.x, enemyPos.y + yOffset, enemyPos.z), 0, 0,
-                    mapAreaWidth, screenHeight);
-
-            if (screenPos.z < 0f || screenPos.z > 1f || screenPos.x < 0f || screenPos.x > mapAreaWidth || screenPos.y < 0f
-                    || screenPos.y > screenHeight) {
-                continue;
-            }
-
-            float progress = enemy.getPoisonBurstProgress();
-            float eased = MathUtils.sin(progress * MathUtils.PI * 0.5f);
-
-                Vector3 baseScreen = camera.project(new Vector3(enemyPos.x, enemyPos.y, enemyPos.z), 0, 0, mapAreaWidth,
-                    screenHeight);
-                Vector3 topScreen = camera.project(new Vector3(enemyPos.x, enemyPos.y + (enemy.isFlying() ? 2.2f : 1.6f), enemyPos.z),
-                    0, 0, mapAreaWidth, screenHeight);
-                float enemyPixelSize = Math.max(52f * uiScale, Math.abs(topScreen.y - baseScreen.y));
-                float drawSize = enemyPixelSize * (0.9f + 1.4f * eased);
-
-            float alpha = 1f - progress;
-            uiBatch.setColor(1f, 1f, 1f, alpha);
-            uiBatch.draw(poisonBurstTexture, screenPos.x - drawSize * 0.5f, screenPos.y - drawSize * 0.5f, drawSize,
-                    drawSize);
-        }
-        uiBatch.setColor(Color.WHITE);
-        uiBatch.end();
-    }
 
     private void renderConsoleOverlay(int screenWidth, int screenHeight) {
         consoleMenu.render(screenWidth,
