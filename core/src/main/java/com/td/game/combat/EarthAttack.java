@@ -1,31 +1,39 @@
 package com.td.game.combat;
 
-import com.td.game.elements.Element;
 import com.td.game.entities.Enemy;
+import com.td.game.pillars.Pillar;
 
 public class EarthAttack implements AttackAction {
-    private final float baseDamage;
-    private final float range;
-    private final float attackSpeed;
-    private final float stunDuration;
+    public static final float STUN_DURATION = 0.5f;
+    private static final float ATTACK_COOLDOWN_MULTIPLIER = 2.5f;
 
-    public EarthAttack(float baseDamage, float range, float attackSpeed, float stunDuration) {
-        this.baseDamage = baseDamage;
-        this.range = range;
-        this.attackSpeed = attackSpeed;
-        this.stunDuration = stunDuration;
+    public static float getAttackCooldown(float defaultCooldown) {
+        return defaultCooldown * ATTACK_COOLDOWN_MULTIPLIER;
+    }
+
+    public static void applyStunInRange(AttackContext context) {
+        if (context == null) {
+            return;
+        }
+
+        Pillar source = context.getSource();
+        if (source == null || context.getEnemiesInRange() == null) {
+            return;
+        }
+
+        float attackRange = source.getAttackRange();
+        for (Enemy enemy : context.getEnemiesInRange()) {
+            if (enemy == null || !enemy.isAlive() || enemy.isAllied()) {
+                continue;
+            }
+            if (source.getPosition().dst(enemy.getPosition()) <= attackRange) {
+                enemy.applyFreeze(STUN_DURATION);
+            }
+        }
     }
 
     @Override
     public void attack(AttackContext context) {
-        if (context == null || context.getTarget() == null) {
-            return;
-        }
-        Enemy target = context.getTarget();
-        Element attackerElement = context.getSource() != null ? context.getSource().getCurrentElement() : null;
-        target.takeDamage(baseDamage, attackerElement);
-        if (stunDuration > 0f) {
-            target.applyRoot(stunDuration, 0f, 0f);
-        }
+        applyStunInRange(context);
     }
 }

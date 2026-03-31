@@ -20,7 +20,7 @@
     "EARTH": {
         "name": "Earth",
         "tier": "Prime",
-        "pillar": "Erects a stone wall in front of enemies, blocking their movement for a short duration. Has a very slow attack speed.",
+        "pillar": "Has a very slow attack speed. Each attack stuns all enemies within its range for 0.5 seconds.",
         "charm": "Grants +5% attack speed, +5% attack damage, and +5% range to all pillars within the Alchemist's aura range."
     },
     "GOLD": {
