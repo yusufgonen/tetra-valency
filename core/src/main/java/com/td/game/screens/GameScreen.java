@@ -828,35 +828,59 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             return;
         }
         float time = globalTimer;
-        float pulseA = 0.75f + 0.25f * MathUtils.sin(time * 4f);
-        float pulseB = 0.8f + 0.2f * MathUtils.sin(time * 6.5f + 1.3f);
+        float pulseA = 0.65f + 0.35f * MathUtils.sin(time * 4f);
+        float pulseB = 0.7f + 0.3f * MathUtils.sin(time * 6.2f + 1.3f);
 
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        Gdx.gl.glLineWidth(2f);
         for (Pillar pillar : pillars) {
             if (pillar == null || pillar.getCurrentElement() != Element.EARTH) {
                 continue;
             }
-            float range = pillar.getAttackRange();
+            float radius = pillar.getAttackRange();
             Vector3 center = pillar.getPosition();
-            Vector3 c = new Vector3(center.x, center.y, center.z);
-            Vector3 edge = new Vector3(center.x + range, center.y, center.z);
-            camera.project(c, 0, 0, mapAreaWidth, screenHeight);
-            camera.project(edge, 0, 0, mapAreaWidth, screenHeight);
-            float radius = c.dst(edge);
-            float jitter = 1.6f + 1.2f * MathUtils.sin(time * 8.5f + range);
-            float cx = c.x + MathUtils.sin(time * 10.2f + range) * jitter;
-            float cy = c.y + MathUtils.cos(time * 11.1f + range) * jitter;
+            int segments = 100;
+            float y = 0.2f;
 
-            uiShapeRenderer.setColor(0.55f, 0.32f, 0.16f, 0.18f + 0.12f * pulseA);
-            uiShapeRenderer.circle(cx, cy, radius, 80);
-            uiShapeRenderer.setColor(0.72f, 0.48f, 0.22f, 0.14f + 0.10f * pulseB);
-            uiShapeRenderer.circle(cx, cy, radius * 0.88f, 80);
-            uiShapeRenderer.setColor(0.35f, 0.2f, 0.1f, 0.12f);
-            uiShapeRenderer.circle(cx, cy, radius * 0.65f, 70);
+            uiShapeRenderer.setColor(0.45f, 0.22f, 0.1f, 0.55f + 0.20f * pulseA);
+            for (int i = 0; i < segments; i++) {
+                float a0 = MathUtils.PI2 * i / segments;
+                float a1 = MathUtils.PI2 * (i + 1) / segments;
+                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * radius, y, center.z + MathUtils.sin(a0) * radius);
+                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * radius, y, center.z + MathUtils.sin(a1) * radius);
+                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
+                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
+                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
+            }
+
+            float innerA = radius * (0.82f + 0.03f * MathUtils.sin(time * 7.2f));
+            uiShapeRenderer.setColor(0.65f, 0.35f, 0.15f, 0.48f + 0.18f * pulseB);
+            for (int i = 0; i < segments; i++) {
+                float a0 = MathUtils.PI2 * i / segments;
+                float a1 = MathUtils.PI2 * (i + 1) / segments;
+                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * innerA, y, center.z + MathUtils.sin(a0) * innerA);
+                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * innerA, y, center.z + MathUtils.sin(a1) * innerA);
+                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
+                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
+                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
+            }
+
+            float innerB = radius * (0.62f + 0.025f * MathUtils.sin(time * 9.1f + 1.2f));
+            uiShapeRenderer.setColor(0.35f, 0.16f, 0.08f, 0.42f);
+            for (int i = 0; i < segments; i++) {
+                float a0 = MathUtils.PI2 * i / segments;
+                float a1 = MathUtils.PI2 * (i + 1) / segments;
+                Vector3 p0 = new Vector3(center.x + MathUtils.cos(a0) * innerB, y, center.z + MathUtils.sin(a0) * innerB);
+                Vector3 p1 = new Vector3(center.x + MathUtils.cos(a1) * innerB, y, center.z + MathUtils.sin(a1) * innerB);
+                camera.project(p0, 0, 0, mapAreaWidth, screenHeight);
+                camera.project(p1, 0, 0, mapAreaWidth, screenHeight);
+                uiShapeRenderer.line(p0.x, p0.y, p1.x, p1.y);
+            }
         }
         uiShapeRenderer.end();
+        Gdx.gl.glLineWidth(1f);
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
 
