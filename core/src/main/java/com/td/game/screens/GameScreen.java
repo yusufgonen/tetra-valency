@@ -722,7 +722,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 camera,
                 gameMap,
                 environment,
-                buildMenu,
+                buildMenu.isActive(),
                 selectedTilePos,
                 validHighlight,
                 pillars,

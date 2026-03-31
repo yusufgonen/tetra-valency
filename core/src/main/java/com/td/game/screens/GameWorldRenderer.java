@@ -14,7 +14,6 @@ import com.td.game.entities.Projectile;
 import com.td.game.map.GameMap;
 import com.td.game.pillars.Pillar;
 import com.td.game.player.Player;
-import com.td.game.ui.ContextualMenuPanel;
 
 final class GameWorldRenderer {
     private GameWorldRenderer() {
@@ -24,7 +23,7 @@ final class GameWorldRenderer {
             PerspectiveCamera camera,
             GameMap gameMap,
             Environment environment,
-            ContextualMenuPanel buildMenu,
+            boolean buildMenuActive,
             Vector3 selectedTilePos,
             ModelInstance validHighlight,
             Array<Pillar> pillars,
@@ -37,7 +36,7 @@ final class GameWorldRenderer {
         modelBatch.begin(camera);
         gameMap.render(modelBatch, environment);
 
-        if (buildMenu.isActive() && selectedTilePos != null) {
+        if (buildMenuActive && selectedTilePos != null) {
             ModelInstance highlight = validHighlight;
             highlight.transform.setToTranslation(selectedTilePos.x, 0.05f, selectedTilePos.z);
             modelBatch.render(highlight, environment);
