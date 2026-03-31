@@ -34,6 +34,7 @@ public class MainMenuScreen implements Screen {
 
     private Rectangle creditsBtn;
     private Rectangle quitBtn;
+    private Rectangle cinematicBtn;
     private String uiMessage;
     private float uiMessageTimer;
 
@@ -84,6 +85,10 @@ public class MainMenuScreen implements Screen {
         optionsBtn = new Rectangle(panelX + rowPadX, startY - (rowH + gap) * 2f, rowW, rowH);
         creditsBtn = new Rectangle(panelX + rowPadX, startY - (rowH + gap) * 3f, rowW, rowH);
         quitBtn = new Rectangle(panelX + rowPadX, startY - (rowH + gap) * 4f, rowW, rowH);
+
+        float cW = Math.max(160f, w * 0.14f);
+        float cH = Math.max(44f, h * 0.06f);
+        cinematicBtn = new Rectangle(w - cW - 24f, 24f, cW, cH);
     }
 
     @Override
@@ -105,6 +110,10 @@ public class MainMenuScreen implements Screen {
         shapes.rect(menuPanel.x, menuPanel.y, menuPanel.width, menuPanel.height);
         shapes.setColor(1f, 0.86f, 0.54f, 0.5f);
         shapes.rect(menuPanel.x, menuPanel.y + menuPanel.height - 4f, menuPanel.width, 3f);
+        if (cinematicBtn != null) {
+            shapes.setColor(new Color(0.95f, 0.72f, 0.29f, 0.94f));
+            shapes.rect(cinematicBtn.x, cinematicBtn.y, cinematicBtn.width, cinematicBtn.height);
+        }
         shapes.end();
 
         batch.begin();
@@ -119,6 +128,9 @@ public class MainMenuScreen implements Screen {
         drawMenuLabel("Options", optionsBtn);
         drawMenuLabel("Credits", creditsBtn);
         drawMenuLabel("Quit", quitBtn);
+        if (cinematicBtn != null) {
+            drawMenuLabel("Cinematic", cinematicBtn);
+        }
 
         if (uiMessageTimer > 0f) {
             menuFont.setColor(new Color(0.1f, 0.06f, 0.03f, 1f));
@@ -259,6 +271,12 @@ public class MainMenuScreen implements Screen {
             if (quitBtn.contains(screenX, y)) {
                 game.audio.playClick();
                 Gdx.app.exit();
+                return true;
+            }
+            if (cinematicBtn.contains(screenX, y)) {
+                game.audio.playClick();
+                game.setScreen(new CinematicScreen(game));
+                dispose();
                 return true;
             }
             return false;

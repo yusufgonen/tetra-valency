@@ -159,6 +159,20 @@ public class AudioManager {
         prefs.flush();
     }
 
+    public void setMusicVolumeTemporary(float vol) {
+        musicVolume = vol;
+        if (menuMusic != null && menuMusic.isPlaying()) {
+            menuMusic.setVolume(musicVolume);
+        }
+        if (mapMusic != null && mapMusic.isPlaying()) {
+            mapMusic.setVolume(musicVolume * MAP_MUSIC_VOLUME_SCALE);
+        }
+    }
+
+    public void setSoundVolumeTemporary(float vol) {
+        soundVolume = vol;
+    }
+
     public void playClick() {
         if (clickSound != null) {
             clickSound.play(soundVolume * 3.0f);

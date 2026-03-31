@@ -6,8 +6,14 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.td.game.TowerDefenseGame;
@@ -21,12 +27,18 @@ public class CinematicScreen implements Screen {
 
     private final TowerDefenseGame game;
     private SpriteBatch batch;
+    private ShapeRenderer shapes;
+    private BitmapFont font;
+    private GlyphLayout glyph;
     private Array<Texture> frames;
     private float[] frameDurations;
     private float totalDuration;
     private float elapsed;
     private Music voiceover;
     private boolean finished;
+    private Rectangle skipBtn;
+    private float prevMusicVolume;
+    private float prevSoundVolume;
 
     public CinematicScreen(TowerDefenseGame game) {
         this.game = game;
@@ -35,9 +47,20 @@ public class CinematicScreen implements Screen {
     @Override
     public void show() {
         batch = new SpriteBatch();
+        shapes = new ShapeRenderer();
+        font = createFont("fonts/font_game_screen.ttf", scaledFontSize(28));
+        glyph = new GlyphLayout();
         frames = new Array<>();
         elapsed = 0f;
         finished = false;
+        recalcLayout();
+
+        prevMusicVolume = game.audio.getMusicVolume();
+        prevSoundVolume = game.audio.getSoundVolume();
+        game.audio.stopMenuMusic();
+        game.audio.stopMapMusic();
+        game.audio.setMusicVolumeTemporary(0f);
+        game.audio.setSoundVolumeTemporary(0f);
 
         FileHandle dir = resolveAsset("cinematic");
         if (dir.exists() && dir.isDirectory()) {
@@ -68,7 +91,7 @@ public class CinematicScreen implements Screen {
         FileHandle voiceoverFile = resolveAsset("audio/voiceover/voiceover.ogg");
         if (voiceoverFile.exists()) {
             voiceover = Gdx.audio.newMusic(voiceoverFile);
-            voiceover.setVolume(game.audio.getSoundVolume());
+            voiceover.setVolume(prevSoundVolume);
             voiceover.setOnCompletionListener(new Music.OnCompletionListener() {
                 @Override
                 public void onCompletion(Music music) {
@@ -86,15 +109,13 @@ public class CinematicScreen implements Screen {
 
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
-            public boolean keyDown(int keycode) {
-                finished = true;
-                return true;
-            }
-
-            @Override
             public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-                finished = true;
-                return true;
+                float y = Gdx.graphics.getHeight() - screenY;
+                if (skipBtn != null && skipBtn.contains(screenX, y)) {
+                    finished = true;
+                    return true;
+                }
+                return false;
             }
         });
     }
@@ -130,6 +151,21 @@ public class CinematicScreen implements Screen {
         batch.begin();
         batch.draw(frame, drawX, drawY, drawW, drawH);
         batch.end();
+
+        if (skipBtn != null) {
+            shapes.begin(ShapeRenderer.ShapeType.Filled);
+            shapes.setColor(new Color(0.92f, 0.68f, 0.26f, 0.95f));
+            shapes.rect(skipBtn.x, skipBtn.y, skipBtn.width, skipBtn.height);
+            shapes.end();
+
+            batch.begin();
+            glyph.setText(font, "Skip");
+            float tx = skipBtn.x + (skipBtn.width - glyph.width) * 0.5f;
+            float ty = skipBtn.y + (skipBtn.height + glyph.height) * 0.5f;
+            font.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
+            font.draw(batch, "Skip", tx, ty);
+            batch.end();
+        }
     }
 
     private void buildDurations() {
@@ -210,6 +246,14 @@ public class CinematicScreen implements Screen {
         if (batch != null) {
             batch.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
         }
+        if (shapes != null) {
+            shapes.getProjectionMatrix().setToOrtho2D(0, 0, width, height);
+        }
+        if (font != null) {
+            font.dispose();
+        }
+        font = createFont("fonts/font_game_screen.ttf", scaledFontSize(28));
+        recalcLayout();
     }
 
     @Override
@@ -231,10 +275,20 @@ public class CinematicScreen implements Screen {
             voiceover.dispose();
             voiceover = null;
         }
+        game.audio.setMusicVolumeTemporary(prevMusicVolume);
+        game.audio.setSoundVolumeTemporary(prevSoundVolume);
         disposeAll(frames);
         if (batch != null) {
             batch.dispose();
             batch = null;
+        }
+        if (shapes != null) {
+            shapes.dispose();
+            shapes = null;
+        }
+        if (font != null) {
+            font.dispose();
+            font = null;
         }
     }
 
@@ -258,5 +312,33 @@ public class CinematicScreen implements Screen {
         if (f.exists())
             return f;
         return Gdx.files.internal(name);
+    }
+
+    private void recalcLayout() {
+        float w = Gdx.graphics.getWidth();
+        float h = Gdx.graphics.getHeight();
+        float bw = Math.max(140f, w * 0.12f);
+        float bh = Math.max(44f, h * 0.06f);
+        skipBtn = new Rectangle(w - bw - 24f, 24f, bw, bh);
+    }
+
+    private int scaledFontSize(int baseSize) {
+        return Math.max(12, Math.round(baseSize * Gdx.graphics.getHeight() / 1080f));
+    }
+
+    private BitmapFont createFont(String path, int size) {
+        FileHandle file = resolveAsset(path);
+        if (!file.exists()) {
+            return new BitmapFont();
+        }
+        FreeTypeFontGenerator gen = new FreeTypeFontGenerator(file);
+        FreeTypeFontGenerator.FreeTypeFontParameter p = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        p.characters = FreeTypeFontGenerator.DEFAULT_CHARS
+                + "\u00e7\u011f\u0131\u015f\u00f6\u00fc\u00c7\u011e\u0130\u015e\u00d6\u00dc";
+        p.size = size;
+        p.color = Color.WHITE;
+        BitmapFont f = gen.generateFont(p);
+        gen.dispose();
+        return f;
     }
 }
