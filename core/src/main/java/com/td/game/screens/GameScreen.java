@@ -2359,13 +2359,13 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
         if (moveTimer <= 0) {
             int dx = 0, dz = 0;
-            if (Gdx.input.isKeyPressed(Input.Keys.W))
+            if (com.td.game.input.KeyBindings.isPressed(com.td.game.input.KeyBindings.Action.MOVE_UP))
                 dz = -1;
-            else if (Gdx.input.isKeyPressed(Input.Keys.S))
+            else if (com.td.game.input.KeyBindings.isPressed(com.td.game.input.KeyBindings.Action.MOVE_DOWN))
                 dz = 1;
-            else if (Gdx.input.isKeyPressed(Input.Keys.A))
+            else if (com.td.game.input.KeyBindings.isPressed(com.td.game.input.KeyBindings.Action.MOVE_LEFT))
                 dx = -1;
-            else if (Gdx.input.isKeyPressed(Input.Keys.D))
+            else if (com.td.game.input.KeyBindings.isPressed(com.td.game.input.KeyBindings.Action.MOVE_RIGHT))
                 dx = 1;
 
             if (dx != 0 || dz != 0) {
@@ -2556,10 +2556,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
         @Override
         public boolean keyDown(int keycode) {
-            if (keycode == Input.Keys.GRAVE) {
-                consoleMenu.toggle();
-                return true;
-            }
             if (consoleMenu.handleKeyDown(keycode, GameScreen.this)) {
                 return true;
             }

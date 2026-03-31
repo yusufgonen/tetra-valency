@@ -17,6 +17,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.td.game.TowerDefenseGame;
 import com.td.game.map.GameMap;
+import com.td.game.input.KeyBindings;
+import com.td.game.systems.OptionsManager;
+import com.td.game.systems.OptionsData;
 
 public class OptionsScreen implements Screen {
     private final TowerDefenseGame game;
@@ -39,6 +42,12 @@ public class OptionsScreen implements Screen {
     private Rectangle musicKnob;
     private Rectangle soundKnob;
     private Rectangle displayModePill;
+    private Rectangle controlsHeader;
+    private Rectangle[] controlKeyPills;
+    private KeyBindings.Action[] controlActions;
+    private KeyBindings.Action waitingFor;
+    private String noticeMessage = "";
+    private float noticeTimer = 0f;
 
     private float musicVolume;
     private float soundVolume;
@@ -71,11 +80,13 @@ public class OptionsScreen implements Screen {
         if (bgTexture == null) {
             bgTexture = loadTextureSafe("ui/augment_screen_bg.png");
         }
-        musicVolume = game.audio.getMusicVolume();
-        soundVolume = game.audio.getSoundVolume();
+        OptionsData options = OptionsManager.get();
+        musicVolume = options.musicVolume;
+        soundVolume = options.soundVolume;
         recalcLayout();
         updateKnobsFromVolume();
-        fullscreenMode = Gdx.graphics.isFullscreen();
+        fullscreenMode = options.fullscreen;
+        applyDisplayMode(false);
         Gdx.input.setInputProcessor(new InputHandler());
     }
 
@@ -97,6 +108,41 @@ public class OptionsScreen implements Screen {
         musicKnob = new Rectangle(musicTrack.x, musicTrack.y - 10f, 26f, 26f);
         soundKnob = new Rectangle(soundTrack.x, soundTrack.y - 10f, 26f, 26f);
         displayModePill = new Rectangle(rootPanel.x + rootPanel.width * 0.5f - 180f, rootPanel.y + 92f, 360f, 52f);
+
+        controlActions = new KeyBindings.Action[] {
+                KeyBindings.Action.MOVE_UP,
+                KeyBindings.Action.MOVE_DOWN,
+                KeyBindings.Action.MOVE_LEFT,
+                KeyBindings.Action.MOVE_RIGHT,
+                KeyBindings.Action.CONSOLE_TOGGLE,
+                KeyBindings.Action.START_WAVE,
+                KeyBindings.Action.BUY_FIRE,
+                KeyBindings.Action.BUY_WATER,
+                KeyBindings.Action.BUY_EARTH,
+                KeyBindings.Action.BUY_AIR,
+                KeyBindings.Action.SLOT_1,
+                KeyBindings.Action.SLOT_2,
+                KeyBindings.Action.SLOT_3,
+                KeyBindings.Action.SLOT_4,
+                KeyBindings.Action.SLOT_5,
+                KeyBindings.Action.SLOT_6,
+                KeyBindings.Action.MOVE_TO_MERGE,
+                KeyBindings.Action.MOVE_TO_CHARM
+        };
+        controlKeyPills = new Rectangle[controlActions.length];
+        for (int i = 0; i < controlActions.length; i++) {
+            controlKeyPills[i] = new Rectangle();
+        }
+        controlsHeader = new Rectangle(rootPanel.x + 60f, rootPanel.y + rootPanel.height * 0.52f, rootPanel.width - 120f, 36f);
+        float rowY = rootPanel.y + rootPanel.height * 0.48f;
+        float rowH = 34f;
+        float gap = 10f;
+        float labelW = rootPanel.width * 0.5f;
+        float keyW = rootPanel.width * 0.32f;
+        for (int i = 0; i < controlKeyPills.length; i++) {
+            float y = rowY - i * (rowH + gap);
+            controlKeyPills[i].set(rootPanel.x + rootPanel.width - keyW - 60f, y, keyW, rowH);
+        }
     }
 
     @Override
@@ -105,6 +151,12 @@ public class OptionsScreen implements Screen {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         float w = Gdx.graphics.getWidth();
         float h = Gdx.graphics.getHeight();
+        if (noticeTimer > 0f) {
+            noticeTimer -= delta;
+            if (noticeTimer < 0f) {
+                noticeTimer = 0f;
+            }
+        }
 
         if (bgTexture != null) {
             batch.begin();
@@ -145,29 +197,54 @@ public class OptionsScreen implements Screen {
         drawCentered("Display: " + (fullscreenMode ? "Fullscreen" : "Windowed"), displayModePill.x,
                 displayModePill.y + displayModePill.height * 0.67f, displayModePill.width);
         drawCentered("Back", backBtn.x, backBtn.y + backBtn.height * 0.67f, backBtn.width);
+
+        drawCentered("Controls", controlsHeader.x, controlsHeader.y + controlsHeader.height * 0.7f, controlsHeader.width);
+        for (int i = 0; i < controlActions.length; i++) {
+            KeyBindings.Action action = controlActions[i];
+            Rectangle pill = controlKeyPills[i];
+            String label = getActionLabel(action);
+            glyph.setText(font, label);
+            font.draw(batch, label, rootPanel.x + 60f, pill.y + pill.height * 0.68f);
+
+            String keyName = Input.Keys.toString(KeyBindings.getKey(action));
+            if (waitingFor == action) {
+                keyName = "...";
+            }
+            drawCentered(keyName, pill.x, pill.y + pill.height * 0.68f, pill.width);
+        }
+
+        if (noticeTimer > 0f) {
+            drawCentered(noticeMessage, rootPanel.x, rootPanel.y + 40f, rootPanel.width);
+        }
         batch.end();
     }
 
     private void toggleDisplayMode() {
+        fullscreenMode = !fullscreenMode;
+        applyDisplayMode(true);
+    }
+
+    private void applyDisplayMode(boolean refresh) {
         if (fullscreenMode) {
-            Gdx.graphics.setWindowedMode(1920, 1080);
-            fullscreenMode = false;
-        } else {
             DisplayMode dm = Gdx.graphics.getDisplayMode();
             Gdx.graphics.setFullscreenMode(dm);
-            fullscreenMode = true;
-        }
-
-        OptionsScreen fresh;
-        if (returnScreen != null) {
-            fresh = new OptionsScreen(game, returnScreen);
         } else {
-            fresh = new OptionsScreen(game, returnMapType);
+            Gdx.graphics.setWindowedMode(1920, 1080);
         }
-        fresh.musicVolume = this.musicVolume;
-        fresh.soundVolume = this.soundVolume;
-        game.setScreen(fresh);
-        dispose();
+        OptionsManager.get().fullscreen = fullscreenMode;
+        OptionsManager.save();
+        if (refresh) {
+            OptionsScreen fresh;
+            if (returnScreen != null) {
+                fresh = new OptionsScreen(game, returnScreen);
+            } else {
+                fresh = new OptionsScreen(game, returnMapType);
+            }
+            fresh.musicVolume = this.musicVolume;
+            fresh.soundVolume = this.soundVolume;
+            game.setScreen(fresh);
+            dispose();
+        }
     }
 
     private void updateKnobsFromVolume() {
@@ -178,12 +255,16 @@ public class OptionsScreen implements Screen {
     private void setMusicVolumeFromX(float x) {
         musicVolume = com.badlogic.gdx.math.MathUtils.clamp((x - musicTrack.x) / musicTrack.width, 0f, 1f);
         game.audio.setMusicVolume(musicVolume);
+        OptionsManager.get().musicVolume = musicVolume;
+        OptionsManager.save();
         updateKnobsFromVolume();
     }
 
     private void setSoundVolumeFromX(float x) {
         soundVolume = com.badlogic.gdx.math.MathUtils.clamp((x - soundTrack.x) / soundTrack.width, 0f, 1f);
         game.audio.setSoundVolume(soundVolume);
+        OptionsManager.get().soundVolume = soundVolume;
+        OptionsManager.save();
         updateKnobsFromVolume();
     }
 
@@ -200,6 +281,35 @@ public class OptionsScreen implements Screen {
         glyph.setText(font, text);
         font.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
         font.draw(batch, text, x + (width - glyph.width) * 0.5f, baselineY);
+    }
+
+    private String getActionLabel(KeyBindings.Action action) {
+        switch (action) {
+            case MOVE_UP: return "Move Up";
+            case MOVE_DOWN: return "Move Down";
+            case MOVE_LEFT: return "Move Left";
+            case MOVE_RIGHT: return "Move Right";
+            case CONSOLE_TOGGLE: return "Console Toggle";
+            case START_WAVE: return "Start Wave";
+            case BUY_FIRE: return "Buy Fire";
+            case BUY_WATER: return "Buy Water";
+            case BUY_EARTH: return "Buy Earth";
+            case BUY_AIR: return "Buy Air";
+            case SLOT_1: return "Select Slot 1";
+            case SLOT_2: return "Select Slot 2";
+            case SLOT_3: return "Select Slot 3";
+            case SLOT_4: return "Select Slot 4";
+            case SLOT_5: return "Select Slot 5";
+            case SLOT_6: return "Select Slot 6";
+            case MOVE_TO_MERGE: return "Move To Merge";
+            case MOVE_TO_CHARM: return "Move To Charm";
+            default: return action.name();
+        }
+    }
+
+    private void showNotice(String msg) {
+        noticeMessage = msg;
+        noticeTimer = 2.5f;
     }
 
     @Override
@@ -292,6 +402,18 @@ public class OptionsScreen implements Screen {
 
         @Override
         public boolean keyDown(int keycode) {
+            if (waitingFor != null) {
+                KeyBindings.Action conflict = KeyBindings.getActionForKey(keycode);
+                if (conflict != null && conflict != waitingFor) {
+                    showNotice("Key already bound to " + getActionLabel(conflict));
+                    waitingFor = null;
+                    return true;
+                }
+                KeyBindings.setKey(waitingFor, keycode);
+                waitingFor = null;
+                showNotice("Key updated.");
+                return true;
+            }
             if (keycode == Input.Keys.ESCAPE) {
                 goBack();
                 return true;
@@ -326,6 +448,14 @@ public class OptionsScreen implements Screen {
                 game.audio.playClick();
                 toggleDisplayMode();
                 return true;
+            }
+
+            for (int i = 0; i < controlKeyPills.length; i++) {
+                if (controlKeyPills[i].contains(screenX, y)) {
+                    waitingFor = controlActions[i];
+                    showNotice("Press a key...");
+                    return true;
+                }
             }
             return false;
         }
