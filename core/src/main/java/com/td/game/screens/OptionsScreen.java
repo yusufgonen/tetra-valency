@@ -116,7 +116,7 @@ public class OptionsScreen implements Screen {
         soundKnob = new Rectangle(soundTrack.x, soundTrack.y - 10f, 26f, 26f);
         displayModePill = new Rectangle(rootPanel.x + rootPanel.width * 0.5f - 180f, rootPanel.y + 92f, 360f, 52f);
         editBindingsBtn = new Rectangle(rootPanel.x + rootPanel.width * 0.5f - 140f, soundTrack.y - 62f, 280f, 44f);
-        bindingsPanel = new Rectangle(rootPanel.x + 50f, rootPanel.y + 60f, rootPanel.width - 100f, rootPanel.height - 220f);
+        bindingsPanel = new Rectangle(rootPanel.x + 50f, rootPanel.y + 90f, rootPanel.width - 100f, rootPanel.height - 250f);
         bindingsViewport = new Rectangle(bindingsPanel.x + 20f, bindingsPanel.y + 20f,
                 bindingsPanel.width - 40f, bindingsPanel.height - 40f);
 
@@ -524,7 +524,7 @@ public class OptionsScreen implements Screen {
                 return false;
             }
             float maxScroll = Math.max(0f, bindingsContentHeight - bindingsViewport.height);
-            bindingsScroll = MathUtils.clamp(bindingsScroll - amountY * 20f, 0f, maxScroll);
+            bindingsScroll = MathUtils.clamp(bindingsScroll + amountY * 20f, 0f, maxScroll);
             return true;
         }
 
