@@ -135,6 +135,7 @@ public class GameScreen implements Screen {
     private String consoleWaveInput = "";
     private String consoleLivesInput = "";
     private String consoleGoldInput = "";
+    private String consoleAugmentInput = "";
     private float pauseIconX;
     private float pauseIconY;
     private float pauseIconSize;
@@ -166,11 +167,14 @@ public class GameScreen implements Screen {
         final Rectangle goldBox = new Rectangle();
         final Rectangle goldInputBox = new Rectangle();
         final Rectangle waveBox = new Rectangle();
+        final Rectangle augmentBox = new Rectangle();
+        final Rectangle augmentInputBox = new Rectangle();
         final Rectangle[] buttons;
         float titleY;
         float livesLabelY;
         float goldLabelY;
         float waveLabelY;
+        float augmentLabelY;
 
         ConsoleLayout(int buttonCount) {
             buttons = new Rectangle[buttonCount];
@@ -224,6 +228,8 @@ public class GameScreen implements Screen {
     private float globalRangeMult = 1f;
     private float globalAttackSpeedMult = 1f;
     private float staffAuraRadius = 8f;
+    private boolean lifeReviveBossesEnabled = false;
+    private boolean coreInvulnerable = false;
     private static final int MERGE_COST = 20;
     private static final float INFO_PANEL_SHIFT_DOWN = 100f;
     private static final float GATE_MODEL_SCALE_MULTIPLIER = 2.0f;
@@ -231,8 +237,9 @@ public class GameScreen implements Screen {
     private static final int CONSOLE_INPUT_LIVES = 1;
     private static final int CONSOLE_INPUT_WAVE = 2;
     private static final int CONSOLE_INPUT_GOLD = 3;
-    private static final String[] CONSOLE_BUTTON_COMMANDS = { "killall", "win", "lose" };
-    private static final String[] CONSOLE_BUTTON_LABELS = { "KILL ALL", "WIN", "LOSE" };
+    private static final int CONSOLE_INPUT_AUGMENT = 4;
+    private static final String[] CONSOLE_BUTTON_COMMANDS = { "killall", "winnormal", "loseendless", "coreinvuln", "addaugment" };
+    private static final int MAX_AUGMENT_ID = 8;
 
     public GameScreen(TowerDefenseGame game) {
         this(game, GameMap.MapType.ELEMENTAL_CASTLE, false);
@@ -531,6 +538,7 @@ public class GameScreen implements Screen {
             consoleLivesInput = "";
             consoleWaveInput = "";
             consoleGoldInput = "";
+            consoleAugmentInput = "";
         }
     }
 
@@ -745,7 +753,8 @@ public class GameScreen implements Screen {
         if (!consoleOpen) {
             return;
         }
-        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight);
+        String[] buttonLabels = getConsoleButtonLabels();
+        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight, buttonLabels.length);
         float defaultFontScale = uiScale * 0.54f;
         float defaultLargeFontScale = uiScale * 0.72f;
 
@@ -773,6 +782,12 @@ public class GameScreen implements Screen {
             uiShapeRenderer.setColor(0.12f, 0.12f, 0.12f, 0.96f);
         }
         uiShapeRenderer.rect(layout.goldInputBox.x, layout.goldInputBox.y, layout.goldInputBox.width, layout.goldInputBox.height);
+        if (activeConsoleInput == CONSOLE_INPUT_AUGMENT) {
+            uiShapeRenderer.setColor(0.18f, 0.18f, 0.18f, 0.98f);
+        } else {
+            uiShapeRenderer.setColor(0.12f, 0.12f, 0.12f, 0.96f);
+        }
+        uiShapeRenderer.rect(layout.augmentInputBox.x, layout.augmentInputBox.y, layout.augmentInputBox.width, layout.augmentInputBox.height);
         uiShapeRenderer.setColor(0.16f, 0.16f, 0.16f, 0.98f);
         for (Rectangle button : layout.buttons) {
             uiShapeRenderer.rect(button.x, button.y, button.width, button.height);
@@ -785,6 +800,7 @@ public class GameScreen implements Screen {
         uiShapeRenderer.rect(layout.livesInputBox.x, layout.livesInputBox.y, layout.livesInputBox.width, layout.livesInputBox.height);
         uiShapeRenderer.rect(layout.goldInputBox.x, layout.goldInputBox.y, layout.goldInputBox.width, layout.goldInputBox.height);
         uiShapeRenderer.rect(layout.waveBox.x, layout.waveBox.y, layout.waveBox.width, layout.waveBox.height);
+        uiShapeRenderer.rect(layout.augmentInputBox.x, layout.augmentInputBox.y, layout.augmentInputBox.width, layout.augmentInputBox.height);
         for (Rectangle button : layout.buttons) {
             uiShapeRenderer.rect(button.x, button.y, button.width, button.height);
         }
@@ -801,18 +817,29 @@ public class GameScreen implements Screen {
         uiFont.getData().setScale(uiScale * 0.50f);
         uiFont.setColor(Color.WHITE);
 
-        drawConsoleFieldLabel(uiBatch, "HEALTH", layout.livesLabelY, layout.livesInputBox);
+        String livesLabel = "HEALTH";
+        if (economyManager != null) {
+            livesLabel = "HEALTH (" + economyManager.getLives() + ")";
+        }
+        drawConsoleFieldLabel(uiBatch, livesLabel, layout.livesLabelY, layout.livesInputBox);
         drawConsoleInputField(uiBatch, layout.livesInputBox, consoleLivesInput, activeConsoleInput == CONSOLE_INPUT_LIVES,
                 "");
         drawConsoleWaveInput(uiBatch, layout);
-        drawConsoleFieldLabel(uiBatch, "GOLD", layout.goldLabelY, layout.goldInputBox);
+        String goldLabel = "GOLD";
+        if (economyManager != null) {
+            goldLabel = "GOLD (" + economyManager.getGold() + ")";
+        }
+        drawConsoleFieldLabel(uiBatch, goldLabel, layout.goldLabelY, layout.goldInputBox);
         drawConsoleInputField(uiBatch, layout.goldInputBox, consoleGoldInput, activeConsoleInput == CONSOLE_INPUT_GOLD,
                 "");
+        drawConsoleFieldLabel(uiBatch, "AUGMENT ID", layout.augmentLabelY, layout.augmentInputBox);
+        drawConsoleInputField(uiBatch, layout.augmentInputBox, consoleAugmentInput,
+                activeConsoleInput == CONSOLE_INPUT_AUGMENT, "");
 
         uiFontLarge.getData().setScale(uiScale * 0.44f);
-        for (int i = 0; i < CONSOLE_BUTTON_LABELS.length; i++) {
+        for (int i = 0; i < buttonLabels.length; i++) {
             Rectangle button = layout.buttons[i];
-            glyphLayout.setText(uiFontLarge, CONSOLE_BUTTON_LABELS[i], Color.WHITE, button.width,
+            glyphLayout.setText(uiFontLarge, buttonLabels[i], Color.WHITE, button.width,
                     com.badlogic.gdx.utils.Align.center, false);
             float textY = button.y + button.height * 0.5f + glyphLayout.height * 0.5f;
             uiFontLarge.draw(uiBatch, glyphLayout, button.x, textY);
@@ -823,26 +850,27 @@ public class GameScreen implements Screen {
         uiFontLarge.getData().setScale(defaultLargeFontScale);
     }
 
-    private ConsoleLayout getConsoleLayout(int screenWidth, int screenHeight) {
-        ConsoleLayout layout = new ConsoleLayout(CONSOLE_BUTTON_LABELS.length);
-        float sideMargin = 22f * uiScale;
-        float topMargin = 62f * uiScale;
+    private ConsoleLayout getConsoleLayout(int screenWidth, int screenHeight, int buttonCount) {
+        ConsoleLayout layout = new ConsoleLayout(buttonCount);
+        float sideMargin = 24f * uiScale;
+        float topMargin = 64f * uiScale;
         float bottomMargin = 0f;
-        float panelW = MathUtils.clamp(screenWidth * 0.165f, 190f * uiScale, 270f * uiScale);
-        float titleInset = 14f * uiScale;
-        float titleBlockH = 18f * uiScale;
-        float titleToFirstLabel = 24f * uiScale;
-        float inputBoxH = 20f * uiScale;
-        float labelToInputGap = 6f * uiScale;
-        float sectionGap = 8f * uiScale;
-        float buttonGap = 7f * uiScale;
-        float buttonH = 28f * uiScale;
+        float panelW = MathUtils.clamp(screenWidth * 0.185f, 210f * uiScale, 300f * uiScale);
+        float titleInset = 16f * uiScale;
+        float titleBlockH = 20f * uiScale;
+        float titleToFirstLabel = 28f * uiScale;
+        float inputBoxH = 22f * uiScale;
+        float labelToInputGap = 7f * uiScale;
+        float sectionGap = 10f * uiScale;
+        float buttonGap = 8f * uiScale;
+        float buttonH = 30f * uiScale;
         float panelH = titleInset + titleBlockH + titleToFirstLabel
                 + (labelToInputGap + inputBoxH)
                 + (sectionGap + labelToInputGap + inputBoxH)
                 + (sectionGap + labelToInputGap + inputBoxH)
-                + (CONSOLE_BUTTON_LABELS.length * buttonH)
-                + ((CONSOLE_BUTTON_LABELS.length - 1) * buttonGap);
+                + (sectionGap + labelToInputGap + inputBoxH)
+                + (buttonCount * buttonH)
+                + ((buttonCount - 1) * buttonGap);
         panelH = Math.min(panelH, screenHeight - topMargin - bottomMargin);
         float panelX = sideMargin;
         float panelY = screenHeight - panelH - topMargin;
@@ -867,7 +895,12 @@ public class GameScreen implements Screen {
         layout.goldInputBox.set(contentX, goldInputY, contentW, inputBoxH);
         layout.goldBox.set(contentX, goldInputY, contentW, inputBoxH);
 
-        float buttonY = layout.goldInputBox.y - buttonH;
+        layout.augmentLabelY = layout.goldInputBox.y - sectionGap;
+        float augmentInputY = layout.augmentLabelY - labelToInputGap - inputBoxH;
+        layout.augmentInputBox.set(contentX, augmentInputY, contentW, inputBoxH);
+        layout.augmentBox.set(contentX, augmentInputY, contentW, inputBoxH);
+
+        float buttonY = layout.augmentInputBox.y - buttonH;
         for (Rectangle button : layout.buttons) {
             button.set(contentX, buttonY, contentW, buttonH);
             buttonY -= buttonH + buttonGap;
@@ -893,7 +926,11 @@ public class GameScreen implements Screen {
     }
 
     private void drawConsoleWaveInput(SpriteBatch batch, ConsoleLayout layout) {
-        drawConsoleFieldLabel(batch, "WAVE", layout.waveLabelY, layout.waveBox);
+        String label = "WAVE";
+        if (waveManager != null) {
+            label = "WAVE (" + waveManager.getCurrentWave() + ")";
+        }
+        drawConsoleFieldLabel(batch, label, layout.waveLabelY, layout.waveBox);
 
         drawConsoleInputField(batch, layout.waveBox, consoleWaveInput, activeConsoleInput == CONSOLE_INPUT_WAVE, "");
     }
@@ -939,28 +976,36 @@ public class GameScreen implements Screen {
                     return;
                 }
                 break;
-            case "win":
-                if (lastWave > (waveManager != null ? waveManager.getMaxWaves() : maxWaves)) {
-                    playVictorySfxOnce();
-                    game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.ENDLESS_FINISH, mapType, lastWave,
-                            elapsedTime));
-                    dispose();
-                } else if (lastWave >= 0) {
-                    playVictorySfxOnce();
-                    game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.WIN, mapType, lastWave, elapsedTime));
-                    dispose();
-                } else {
-                    showMessage("WIN is not available right now.");
-                }
-                break;
-            case "lose":
-                playLoseSfxOnce();
-                game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.LOSE, mapType, lastWave, elapsedTime));
+            case "winnormal":
+                playVictorySfxOnce();
+                game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.WIN, mapType, lastWave, elapsedTime));
                 dispose();
+                break;
+            case "loseendless":
+                playLoseSfxOnce();
+                game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.ENDLESS_FINISH, mapType, lastWave, elapsedTime));
+                dispose();
+                break;
+            case "coreinvuln":
+                coreInvulnerable = !coreInvulnerable;
+                showMessage(coreInvulnerable ? "Core shield enabled." : "Core shield disabled.");
+                break;
+            case "addaugment":
+                applyAugmentFromConsole();
                 break;
             default:
                 break;
         }
+    }
+
+    private String[] getConsoleButtonLabels() {
+        return new String[] {
+                "KILL ALL",
+                "WIN NORMAL",
+                "LOSE ENDLESS",
+                coreInvulnerable ? "CORE SHIELD: ON" : "CORE SHIELD: OFF",
+                "ADD AUGMENT"
+        };
     }
 
     private void jumpToWaveFromConsole() {
@@ -1053,11 +1098,46 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void applyAugmentFromConsole() {
+        String rawValue = consoleAugmentInput == null ? "" : consoleAugmentInput.trim();
+        if (rawValue.isEmpty()) {
+            showMessage("Enter an augment id first.");
+            return;
+        }
+        int id;
+        try {
+            id = Integer.parseInt(rawValue);
+        } catch (NumberFormatException ex) {
+            showMessage("Augment id must be a number.");
+            return;
+        }
+        if (id < 0 || id > MAX_AUGMENT_ID) {
+            showMessage("Augment id must be between 0 and " + MAX_AUGMENT_ID + ".");
+            return;
+        }
+        if (isAugmentAcquired(id)) {
+            showMessage("Augment already acquired.");
+            return;
+        }
+        applyAugment(id);
+        acquiredAugments.add(new AcquiredAugment(id));
+        activeConsoleInput = CONSOLE_INPUT_NONE;
+    }
+
+    private boolean isAugmentAcquired(int id) {
+        for (int i = 0; i < acquiredAugments.size; i++) {
+            if (acquiredAugments.get(i).id == id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private int getConsoleButtonIndexAt(int screenX, int flippedY, int screenWidth, int screenHeight) {
         if (!consoleOpen) {
             return -1;
         }
-        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight);
+        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight, CONSOLE_BUTTON_COMMANDS.length);
         for (int i = 0; i < layout.buttons.length; i++) {
             Rectangle button = layout.buttons[i];
             if (isInRect(screenX, flippedY, button.x, button.y, button.width, button.height)) {
@@ -1071,7 +1151,7 @@ public class GameScreen implements Screen {
         if (!consoleOpen) {
             return false;
         }
-        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight);
+        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight, CONSOLE_BUTTON_COMMANDS.length);
         return isInRect(screenX, flippedY, layout.panel.x, layout.panel.y, layout.panel.width, layout.panel.height);
     }
 
@@ -1079,7 +1159,7 @@ public class GameScreen implements Screen {
         if (!consoleOpen) {
             return CONSOLE_INPUT_NONE;
         }
-        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight);
+        ConsoleLayout layout = getConsoleLayout(screenWidth, screenHeight, CONSOLE_BUTTON_COMMANDS.length);
         if (isInRect(screenX, flippedY, layout.livesInputBox.x, layout.livesInputBox.y,
                 layout.livesInputBox.width, layout.livesInputBox.height)) {
             return CONSOLE_INPUT_LIVES;
@@ -1090,6 +1170,10 @@ public class GameScreen implements Screen {
         if (isInRect(screenX, flippedY, layout.goldInputBox.x, layout.goldInputBox.y,
                 layout.goldInputBox.width, layout.goldInputBox.height)) {
             return CONSOLE_INPUT_GOLD;
+        }
+        if (isInRect(screenX, flippedY, layout.augmentInputBox.x, layout.augmentInputBox.y,
+                layout.augmentInputBox.width, layout.augmentInputBox.height)) {
+            return CONSOLE_INPUT_AUGMENT;
         }
         return CONSOLE_INPUT_NONE;
     }
@@ -1149,6 +1233,8 @@ public class GameScreen implements Screen {
                 return consoleWaveInput;
             case CONSOLE_INPUT_GOLD:
                 return consoleGoldInput;
+            case CONSOLE_INPUT_AUGMENT:
+                return consoleAugmentInput;
             default:
                 return "";
         }
@@ -1164,6 +1250,9 @@ public class GameScreen implements Screen {
                 break;
             case CONSOLE_INPUT_GOLD:
                 consoleGoldInput = value;
+                break;
+            case CONSOLE_INPUT_AUGMENT:
+                consoleAugmentInput = value;
                 break;
             default:
                 break;
@@ -1187,6 +1276,9 @@ public class GameScreen implements Screen {
                 break;
             case CONSOLE_INPUT_GOLD:
                 setGoldFromConsole();
+                break;
+            case CONSOLE_INPUT_AUGMENT:
+                applyAugmentFromConsole();
                 break;
             default:
                 break;
@@ -2271,6 +2363,9 @@ public class GameScreen implements Screen {
             case 7:
                 path = "ui/augment_icon_range.png";
                 break;
+            case 8:
+                path = "ui/augment_icon_necromance.png";
+                break;
         }
         com.badlogic.gdx.files.FileHandle file = resolveAsset(path);
         if (file.exists()) {
@@ -2281,7 +2376,7 @@ public class GameScreen implements Screen {
 
     private void rollAugments() {
         Array<Integer> available = new Array<>();
-        for (int i = 0; i <= 7; i++) {
+        for (int i = 0; i <= MAX_AUGMENT_ID; i++) {
             boolean has = false;
             for (int j = 0; j < acquiredAugments.size; j++) {
                 if (acquiredAugments.get(j).id == i) {
@@ -2301,8 +2396,8 @@ public class GameScreen implements Screen {
             augmentOptionA = available.get(0);
             augmentOptionB = available.get(0);
         } else {
-            augmentOptionA = MathUtils.random(0, 7);
-            augmentOptionB = MathUtils.random(0, 7);
+            augmentOptionA = MathUtils.random(0, MAX_AUGMENT_ID);
+            augmentOptionB = MathUtils.random(0, MAX_AUGMENT_ID);
         }
     }
 
@@ -2388,6 +2483,7 @@ public class GameScreen implements Screen {
         data.globalRangeMult = this.globalRangeMult;
         data.globalAttackSpeedMult = this.globalAttackSpeedMult;
         data.staffAuraRadius = this.staffAuraRadius;
+        data.lifeReviveBossesEnabled = this.lifeReviveBossesEnabled;
 
         data.acquiredAugments.clear();
         for (AcquiredAugment aug : this.acquiredAugments) {
@@ -2400,10 +2496,14 @@ public class GameScreen implements Screen {
         this.globalRangeMult = data.globalRangeMult;
         this.globalAttackSpeedMult = data.globalAttackSpeedMult;
         this.staffAuraRadius = data.staffAuraRadius;
+        this.lifeReviveBossesEnabled = data.lifeReviveBossesEnabled;
 
         this.acquiredAugments.clear();
         for (int augId : data.acquiredAugments) {
             this.acquiredAugments.add(new AcquiredAugment(augId));
+            if (augId == 8) {
+                this.lifeReviveBossesEnabled = true;
+            }
         }
     }
 
@@ -2457,6 +2557,10 @@ public class GameScreen implements Screen {
                 staffAuraRadius += 2.5f;
                 showMessage("Augment: Expanding Aura");
                 break;
+            case 8:
+                lifeReviveBossesEnabled = true;
+                showMessage("Augment: Necromancy");
+                break;
             default:
                 break;
         }
@@ -2480,6 +2584,8 @@ public class GameScreen implements Screen {
                 return "Stipend";
             case 7:
                 return "Expanding Aura";
+            case 8:
+                return "Necromancy";
             default:
                 return "Unknown";
         }
@@ -2503,6 +2609,8 @@ public class GameScreen implements Screen {
                 return "Instant +100 gold";
             case 7:
                 return "Alchemist aura radius +30%";
+            case 8:
+                return "Life can revive bosses";
             default:
                 return "-";
         }
@@ -2719,9 +2827,11 @@ public class GameScreen implements Screen {
             enemy.update(delta);
             if (enemy.hasReachedEnd()) {
                 if (!enemy.isAllied()) {
-                    economyManager.loseLife();
-                    coreFlashTimer = 0.4f;
-                    game.audio.playCoreHit();
+                    if (!coreInvulnerable) {
+                        economyManager.loseLife();
+                        coreFlashTimer = 0.4f;
+                        game.audio.playCoreHit();
+                    }
                 }
             }
             if (!enemy.isAlive() && !enemy.hasReachedEnd()) {
@@ -2737,7 +2847,9 @@ public class GameScreen implements Screen {
                     
                     
                     if (LifeAttack.canRevive(pillars, enemy)) {
-                        reviveAsAlly(enemy);
+                        if (lifeReviveBossesEnabled || !(enemy instanceof com.td.game.entities.DemonEnemy)) {
+                            reviveAsAlly(enemy);
+                        }
                     }
                 }
             }

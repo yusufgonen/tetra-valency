@@ -38,6 +38,7 @@ public class SaveData {
     public float globalAttackSpeedMult;
     public float staffAuraRadius;
     public Array<Integer> acquiredAugments;
+    public boolean lifeReviveBossesEnabled;
 
     
     public Array<PillarSaveData> pillars;
