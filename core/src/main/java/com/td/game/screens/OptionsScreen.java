@@ -154,7 +154,9 @@ public class OptionsScreen implements Screen {
             float y = rowY - i * (rowH + gap);
             controlKeyPills[i].set(bindingsViewport.x + bindingsViewport.width - keyW, y, keyW, rowH);
         }
-        bindingsContentHeight = (controlActions.length * (rowH + gap)) + 40f;
+        float firstRowTop = rowY + rowH;
+        float lastRowBottom = rowY - (controlActions.length - 1) * (rowH + gap);
+        bindingsContentHeight = (firstRowTop - lastRowBottom) + 20f;
         float maxScroll = Math.max(0f, bindingsContentHeight - bindingsViewport.height);
         bindingsScroll = MathUtils.clamp(bindingsScroll, 0f, maxScroll);
     }
@@ -195,7 +197,7 @@ public class OptionsScreen implements Screen {
             shapes.setColor(new Color(0.56f, 0.43f, 0.33f, 1f));
             for (int i = 0; i < controlActions.length; i++) {
                 Rectangle pill = controlKeyPills[i];
-                float y = pill.y - bindingsScroll;
+                float y = pill.y + bindingsScroll;
                 if (y + pill.height < bindingsViewport.y || y > bindingsViewport.y + bindingsViewport.height) {
                     continue;
                 }
@@ -239,7 +241,7 @@ public class OptionsScreen implements Screen {
             for (int i = 0; i < controlActions.length; i++) {
                 KeyBindings.Action action = controlActions[i];
                 Rectangle pill = controlKeyPills[i];
-                float y = pill.y - bindingsScroll;
+                float y = pill.y + bindingsScroll;
                 if (y + pill.height < bindingsViewport.y || y > bindingsViewport.y + bindingsViewport.height) {
                     continue;
                 }
@@ -482,7 +484,7 @@ public class OptionsScreen implements Screen {
             if (bindingsOpen) {
                 for (int i = 0; i < controlKeyPills.length; i++) {
                     Rectangle pill = controlKeyPills[i];
-                    float pillY = pill.y - bindingsScroll;
+                    float pillY = pill.y + bindingsScroll;
                     if (screenX >= pill.x && screenX <= pill.x + pill.width && y >= pillY && y <= pillY + pill.height) {
                         waitingFor = controlActions[i];
                         showNotice("Press a key...");
