@@ -17,9 +17,9 @@ import com.td.game.entities.PinkBlobEnemy;
 import com.td.game.utils.ModelFactory;
 
 public class WaveManager implements Disposable {
-    private static final int MAX_WAVES = 50;
+    protected static final int MAX_WAVES = 50;
     private static final int PHOTO_EMPTY_TILES_BETWEEN_ENEMIES = 0;
-    private static final Element[] ENEMY_ELEMENTS = {
+    protected static final Element[] ENEMY_ELEMENTS = {
             Element.FIRE,
             Element.WATER,
             Element.EARTH,
@@ -103,7 +103,7 @@ public class WaveManager implements Disposable {
                 currentWave, enemiesInWave, spawnInterval));
     }
 
-    private JsonValue getWaveConfig(int wave) {
+    protected JsonValue getWaveConfig(int wave) {
         if (wavesData != null) {
             for (JsonValue w : wavesData) {
                 if (w.getInt("wave") == wave) {
@@ -125,7 +125,7 @@ public class WaveManager implements Disposable {
         return 10 + (wave * 2);
     }
 
-    private float getSpawnIntervalForWave(int wave) {
+    protected float getSpawnIntervalForWave(int wave) {
         JsonValue config = getWaveConfig(wave);
         if (config != null) {
             return config.getFloat("spawnInterval", Math.max(0.8f, 2.0f - (wave * 0.05f)));
@@ -151,7 +151,7 @@ public class WaveManager implements Disposable {
         
         if (enemiesSpawned >= enemiesInWave && getAliveEnemyCount() == 0) {
             waveInProgress = false;
-            allWavesComplete = currentWave == MAX_WAVES;
+            allWavesComplete = currentWave >= getMaxWaves();
         }
     }
 
@@ -162,7 +162,19 @@ public class WaveManager implements Disposable {
         Gdx.app.log("WaveManager", "Spawned enemy: " + enemy.getName() + " with element: " + enemy.getElement());
     }
 
-    private Enemy createEnemyForWave(int wave, int index) {
+    protected float getHealthMultiplierForWave(int wave) {
+        return 1f + (wave * 0.15f);
+    }
+
+    protected float getSpeedMultiplierForWave(int wave) {
+        return Math.min(1.5f, 1f + (wave * 0.01f));
+    }
+
+    protected float getRewardMultiplierForWave(int wave) {
+        return 1f + wave * 0.1f;
+    }
+
+    protected Enemy createEnemyForWave(int wave, int index) {
         JsonValue config = getWaveConfig(wave);
         Array<String> types = new Array<>();
         if (config != null && config.has("types")) {
@@ -184,12 +196,13 @@ public class WaveManager implements Disposable {
         String typeStr = types.get(index % types.size);
         Enemy enemy;
 
-        float healthMult = 1f + (wave * 0.15f);
-        float speedMult = Math.min(1.5f, 1f + (wave * 0.01f));
+        float healthMult = getHealthMultiplierForWave(wave);
+        float speedMult = getSpeedMultiplierForWave(wave);
+        float rewardMult = getRewardMultiplierForWave(wave);
 
         if ("TYPE_DEMON".equals(typeStr)) {
             DemonEnemy boss = new DemonEnemy(5000f * healthMult, 0.4f * Math.min(1.2f, speedMult),
-                    Math.round(1000 * (1 + wave * 0.1f)));
+                    Math.round(1000 * rewardMult));
             boss.setModel(demonModel);
             boss.setVisualScaleMultiplier(4.0f);
             enemy = boss;
@@ -197,21 +210,21 @@ public class WaveManager implements Disposable {
             enemy = new GolemEnemy(
                     220f * healthMult,
                     0.6f * speedMult,
-                    Math.round(40 * (1 + wave * 0.1f)));
+                    Math.round(40 * rewardMult));
             enemy.setModel(golemModel);
             enemy.setVisualScaleMultiplier(3.0f);
         } else if ("TYPE_BAT".equals(typeStr)) {
             enemy = new BatEnemy(
                     100f * healthMult,
                     1.3f * speedMult,
-                    Math.round(30 * (1 + wave * 0.1f)));
+                    Math.round(30 * rewardMult));
             enemy.setModel(batModel);
             enemy.setVisualScaleMultiplier(1.3f);
         } else { 
             enemy = new PinkBlobEnemy(
                     55f * healthMult,
                     1.2f * speedMult,
-                    Math.round(10 * (1 + wave * 0.1f)));
+                    Math.round(10 * rewardMult));
             enemy.setModel(pinkBlobModel);
             enemy.setVisualScaleMultiplier(1.2f);
         }

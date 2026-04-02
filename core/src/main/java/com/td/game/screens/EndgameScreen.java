@@ -370,7 +370,7 @@ public class EndgameScreen implements Screen {
             }
             if (endState == EndState.WIN && endlessModeBtn.contains(screenX, y)) {
                 game.audio.playClick();
-                game.setScreen(new GameScreen(game, mapType, true));
+                game.setScreen(new GameScreen(game, mapType, true, true));
                 dispose();
                 return true;
             }

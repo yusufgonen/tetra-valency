@@ -38,6 +38,7 @@ import com.td.game.pillars.Pillar;
 import com.td.game.pillars.PillarType;
 import com.td.game.player.Player;
 import com.td.game.systems.EconomyManager;
+import com.td.game.systems.EndlessWaveManager;
 import com.td.game.systems.WaveManager;
 import com.td.game.ui.ContextualMenuPanel;
 import com.td.game.ui.GameShop;
@@ -218,11 +219,17 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     }
 
     private boolean loadFromSave;
+    private final boolean endlessMode;
 
     public GameScreen(TowerDefenseGame game, GameMap.MapType mapType, boolean loadFromSave) {
+        this(game, mapType, loadFromSave, false);
+    }
+
+    public GameScreen(TowerDefenseGame game, GameMap.MapType mapType, boolean loadFromSave, boolean endlessMode) {
         this.game = game;
         this.mapType = mapType == null ? GameMap.MapType.ELEMENTAL_CASTLE : mapType;
         this.loadFromSave = loadFromSave;
+        this.endlessMode = endlessMode;
     }
 
     @Override
@@ -366,7 +373,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         for (int[] wp : gameMap.getWaypointsForMap()) {
             pathWaypoints.add(new Vector3(wp[0] * Constants.TILE_SIZE, 0, wp[1] * Constants.TILE_SIZE));
         }
-        waveManager = new WaveManager(pathWaypoints, modelFactory);
+        waveManager = endlessMode
+            ? new EndlessWaveManager(pathWaypoints, modelFactory)
+            : new WaveManager(pathWaypoints, modelFactory);
 
         buildMenu = new ContextualMenuPanel();
         buildMenu.setFont(uiFont, uiBatch);
