@@ -587,7 +587,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             return;
         }
         endgameTransitioning = true;
-        com.td.game.systems.SaveManager.deleteSave(mapType);
+        if (endState == EndgameScreen.EndState.LOSE || endState == EndgameScreen.EndState.ENDLESS_FINISH) {
+            com.td.game.systems.SaveManager.deleteSave(mapType);
+        }
         game.setScreen(new EndgameScreen(game, endState, mapType, waveToShow, elapsedToShow));
     }
 
@@ -603,6 +605,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         boolean randomizeForConsole = elapsedTime < 0f;
         int lastWave = toDisplayWaveForState(EndgameScreen.EndState.WIN, randomizeForConsole);
         float shownTime = toDisplayElapsedTime(elapsedTime, randomizeForConsole);
+        if (!randomizeForConsole) {
+            saveGameState();
+        }
         playVictorySfxOnce();
         openEndgameScreen(EndgameScreen.EndState.WIN, lastWave, shownTime);
     }
