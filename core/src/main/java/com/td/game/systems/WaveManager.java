@@ -1,7 +1,6 @@
 package com.td.game.systems;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector3;
@@ -10,7 +9,11 @@ import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 import com.td.game.elements.Element;
-import com.td.game.entities.*;
+import com.td.game.entities.BatEnemy;
+import com.td.game.entities.DemonEnemy;
+import com.td.game.entities.Enemy;
+import com.td.game.entities.GolemEnemy;
+import com.td.game.entities.PinkBlobEnemy;
 import com.td.game.utils.ModelFactory;
 
 public class WaveManager implements Disposable {
@@ -213,11 +216,15 @@ public class WaveManager implements Disposable {
             enemy.setVisualScaleMultiplier(1.2f);
         }
 
-        Element randomElement = ENEMY_ELEMENTS[MathUtils.random(ENEMY_ELEMENTS.length - 1)];
-        enemy.setElement(randomElement);
+        Element assignedElement = null;
+        boolean isFinalWaveDemonBoss = wave == MAX_WAVES && enemy instanceof DemonEnemy;
+        if (!isFinalWaveDemonBoss) {
+            assignedElement = ENEMY_ELEMENTS[MathUtils.random(ENEMY_ELEMENTS.length - 1)];
+            enemy.setElement(assignedElement);
+        }
 
         Gdx.app.log("WaveManager", String.format("Created enemy: %s, Health: %.0f, Element: %s",
-                enemy.getName(), enemy.getMaxHealth(), randomElement.name()));
+            enemy.getName(), enemy.getMaxHealth(), assignedElement != null ? assignedElement.name() : "NONE"));
 
         return enemy;
     }
