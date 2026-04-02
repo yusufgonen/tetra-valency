@@ -589,7 +589,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         endgameTransitioning = true;
         com.td.game.systems.SaveManager.deleteSave(mapType);
         game.setScreen(new EndgameScreen(game, endState, mapType, waveToShow, elapsedToShow));
-        dispose();
     }
 
     @Override
@@ -736,6 +735,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         if (!endgameTransitioning && !paused) {
             float simDelta = delta * SPEED_MULTIPLIERS[speedIndex];
             update(simDelta);
+        }
+
+        if (endgameTransitioning) {
+            return;
         }
 
         int screenWidth = Gdx.graphics.getWidth();
