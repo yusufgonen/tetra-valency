@@ -2592,6 +2592,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             if (consoleMenu.handleKeyDown(keycode, GameScreen.this)) {
                 return true;
             }
+            if (consoleMenu.isOpen()) {
+                // While console is open, block all gameplay hotkeys and controls.
+                return true;
+            }
             if (com.td.game.input.KeyBindings.handleShortcutKeys(keycode, game, mapType, GameScreen.this)) {
                 return true;
             }
