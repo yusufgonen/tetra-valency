@@ -7,5 +7,5 @@ lwjgl3/build/
 *.log
 .DS_Store
 Thumbs.db
-.saves/
 saves/
+crashlog.txt
