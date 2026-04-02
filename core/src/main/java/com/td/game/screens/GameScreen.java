@@ -167,8 +167,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private Array<com.td.game.entities.Effect> activeEffects = new Array<>();
     private HashMap<Element, Texture> effectTextures = new HashMap<>();
 
-    private boolean gameOver;
-    private boolean gameWon;
+    private boolean endgameTransitioning;
     private boolean victorySfxPlayed;
     private boolean loseSfxPlayed;
     private boolean augmentChoiceActive;
@@ -415,8 +414,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         pillarPanelY = 0f;
         pillarPanelW = 220f * uiScale;
         pillarPanelH = 170f * uiScale;
-        gameOver = false;
-        gameWon = false;
+        endgameTransitioning = false;
         victorySfxPlayed = false;
         loseSfxPlayed = false;
         augmentChoiceActive = false;
@@ -562,7 +560,36 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
     @Override
     public void clearGameOver() {
-        gameOver = false;
+        endgameTransitioning = false;
+    }
+
+    private float toDisplayElapsedTime(float elapsedTime, boolean randomizeForConsole) {
+        if (!randomizeForConsole) {
+            return Math.max(0f, elapsedTime);
+        }
+        return MathUtils.random(45f, 3600f);
+    }
+
+    private int toDisplayWaveForState(EndgameScreen.EndState endState, boolean randomizeForConsole) {
+        int currentWave = waveManager != null ? waveManager.getCurrentWave() : 1;
+        int waveCap = waveManager != null ? waveManager.getMaxWaves() : 50;
+        if (!randomizeForConsole) {
+            return Math.max(1, currentWave);
+        }
+        if (endState == EndgameScreen.EndState.ENDLESS_FINISH) {
+            return MathUtils.random(waveCap + 1, waveCap + 120);
+        }
+        return MathUtils.random(1, Math.max(1, waveCap));
+    }
+
+    private void openEndgameScreen(EndgameScreen.EndState endState, int waveToShow, float elapsedToShow) {
+        if (endgameTransitioning) {
+            return;
+        }
+        endgameTransitioning = true;
+        com.td.game.systems.SaveManager.deleteSave(mapType);
+        game.setScreen(new EndgameScreen(game, endState, mapType, waveToShow, elapsedToShow));
+        dispose();
     }
 
     @Override
@@ -574,26 +601,29 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
     @Override
     public void winNormal(float elapsedTime) {
-        int lastWave = waveManager != null ? waveManager.getCurrentWave() : 0;
+        boolean randomizeForConsole = elapsedTime < 0f;
+        int lastWave = toDisplayWaveForState(EndgameScreen.EndState.WIN, randomizeForConsole);
+        float shownTime = toDisplayElapsedTime(elapsedTime, randomizeForConsole);
         playVictorySfxOnce();
-        game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.WIN, mapType, lastWave, elapsedTime));
-        dispose();
+        openEndgameScreen(EndgameScreen.EndState.WIN, lastWave, shownTime);
     }
 
     @Override
     public void loseEndless(float elapsedTime) {
-        int lastWave = waveManager != null ? waveManager.getCurrentWave() : 0;
+        boolean randomizeForConsole = elapsedTime < 0f;
+        int lastWave = toDisplayWaveForState(EndgameScreen.EndState.ENDLESS_FINISH, randomizeForConsole);
+        float shownTime = toDisplayElapsedTime(elapsedTime, randomizeForConsole);
         playLoseSfxOnce();
-        game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.ENDLESS_FINISH, mapType, lastWave, elapsedTime));
-        dispose();
+        openEndgameScreen(EndgameScreen.EndState.ENDLESS_FINISH, lastWave, shownTime);
     }
 
     @Override
     public void lose(float elapsedTime) {
-        int lastWave = waveManager != null ? waveManager.getCurrentWave() : 0;
+        boolean randomizeForConsole = elapsedTime < 0f;
+        int lastWave = toDisplayWaveForState(EndgameScreen.EndState.LOSE, randomizeForConsole);
+        float shownTime = toDisplayElapsedTime(elapsedTime, randomizeForConsole);
         playLoseSfxOnce();
-        game.setScreen(new EndgameScreen(game, EndgameScreen.EndState.LOSE, mapType, lastWave, elapsedTime));
-        dispose();
+        openEndgameScreen(EndgameScreen.EndState.LOSE, lastWave, shownTime);
     }
 
     @Override
@@ -699,11 +729,11 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         }
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-        if (!gameOver && !gameWon) {
+        if (!endgameTransitioning) {
             globalTimer += delta;
         }
 
-        if (!gameOver && !gameWon && !paused) {
+        if (!endgameTransitioning && !paused) {
             float simDelta = delta * SPEED_MULTIPLIERS[speedIndex];
             update(simDelta);
         }
@@ -2473,12 +2503,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             return false;
         }
 
-        com.td.game.systems.SaveManager.deleteSave(mapType);
         EndgameScreen.EndState endState = currentWave > waveCap
                 ? EndgameScreen.EndState.ENDLESS_FINISH
                 : EndgameScreen.EndState.WIN;
-        game.setScreen(new EndgameScreen(game, endState, mapType, currentWave, elapsedTime));
-        dispose();
+        openEndgameScreen(endState, currentWave, Math.max(0f, elapsedTime));
         return true;
     }
 
@@ -3082,7 +3110,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
     private void updateHoveredEnemy(int screenWidth, int screenHeight, int mapAreaWidth) {
         hoveredEnemy = null;
-        if (paused || gameOver || gameWon)
+        if (paused || endgameTransitioning)
             return;
 
         float mx = Gdx.input.getX();

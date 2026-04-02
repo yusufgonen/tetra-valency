@@ -287,13 +287,13 @@ public class ConsoleMenu {
                 ctx.openEndgameForKillAllIfNeeded(elapsedTime);
                 break;
             case "winnormal":
-                ctx.winNormal(elapsedTime);
+                ctx.winNormal(-1f);
                 break;
             case "loseendless":
-                ctx.loseEndless(elapsedTime);
+                ctx.loseEndless(-1f);
                 break;
             case "lose":
-                ctx.lose(elapsedTime);
+                ctx.lose(-1f);
                 break;
             case "coreinvuln":
                 coreShieldEnabled = !coreShieldEnabled;
