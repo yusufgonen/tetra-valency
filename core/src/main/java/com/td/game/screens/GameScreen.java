@@ -1254,6 +1254,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             if (e != null) {
                 uiShapeRenderer.setColor(e.getR(), e.getG(), e.getB(), 1f);
                 uiShapeRenderer.circle(sx + invSlotSize * 0.5f, sy + invSlotSize * 0.5f, invSlotSize * 0.3f);
+
+                Rectangle sellBadge = getInventorySellBadgeRect(i);
+                uiShapeRenderer.setColor(0.78f, 0.12f, 0.12f, 1f);
+                uiShapeRenderer.rect(sellBadge.x, sellBadge.y, sellBadge.width, sellBadge.height);
             }
         }
         uiShapeRenderer.end();
@@ -1274,6 +1278,19 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             float sy = invBottomY + (1 - row) * (invSlotSize + invPad);
             drawOrbTextureCentered(e, sx, sy, invSlotSize, invSlotSize);
         }
+
+        uiFont.setColor(Color.WHITE);
+        for (int i = 0; i < unlocked; i++) {
+            if (inventory.getOrbAt(i) == null) {
+                continue;
+            }
+            Rectangle sellBadge = getInventorySellBadgeRect(i);
+            glyphLayout.setText(uiFont, "SAT");
+            uiFont.draw(uiBatch, "SAT",
+                    sellBadge.x + (sellBadge.width - glyphLayout.width) * 0.5f,
+                    sellBadge.y + (sellBadge.height + glyphLayout.height) * 0.5f - 1f * uiScale);
+        }
+
         inventoryInfoBtnSize = 20f * uiScale;
         inventoryInfoBtnX = sectionX + sectionW - inventoryInfoBtnSize;
         inventoryInfoBtnY = invHeaderY + (headerH - inventoryInfoBtnSize) * 0.5f;
@@ -2353,6 +2370,27 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         return isInRect(x, y, inventoryInfoBtnX, inventoryInfoBtnY, inventoryInfoBtnSize, inventoryInfoBtnSize);
     }
 
+    private Rectangle getInventorySellBadgeRect(int slotIndex) {
+        float slotSize = inventory.getSlotSize();
+        float slotPad = inventory.getPadding();
+        int col = slotIndex % 3;
+        int row = slotIndex / 3;
+        float slotX = inventory.getX() + col * (slotSize + slotPad);
+        float slotY = inventory.getY() + (1 - row) * (slotSize + slotPad);
+
+        float badgeW = slotSize * 0.34f;
+        float badgeH = slotSize * 0.22f;
+        float margin = 3f * uiScale;
+        float badgeX = slotX + slotSize - badgeW - margin;
+        float badgeY = slotY + margin;
+        return new Rectangle(badgeX, badgeY, badgeW, badgeH);
+    }
+
+    private boolean isOnInventorySellBadge(float x, float y, int slotIndex) {
+        Rectangle badge = getInventorySellBadgeRect(slotIndex);
+        return isInRect(x, y, badge.x, badge.y, badge.width, badge.height);
+    }
+
     private boolean isInAnyInfoPanel(float x, float y) {
         return (staffInfoOpen || mergeInfoOpen || inventoryInfoOpen) &&
                 x >= infoPanelX && x <= infoPanelX + infoPanelW &&
@@ -2888,6 +2926,16 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
                 int slot = inventory.getSlotAt(screenX, flippedY);
                 if (slot != -1) {
+                    if (inventory.getOrbAt(slot) != null && isOnInventorySellBadge(screenX, flippedY, slot)) {
+                        inventory.removeOrbAt(slot);
+                        if (inventory.getSelectedIndex() == slot) {
+                            inventory.cancelSelection();
+                        }
+                        game.audio.playSell();
+                        showMessage("Orb sold for 0G");
+                        return true;
+                    }
+
                     inventory.handleClick(screenX, flippedY);
                     if (awaitingPillarOrbSelection && selectedPillar != null && inventory.hasSelection()) {
                         Element selected = inventory.takeSelected();
