@@ -867,10 +867,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 for (JsonValue entry = root.child; entry != null; entry = entry.next) {
                     String key = entry.name;
                     String pillar = entry.getString("pillar", "");
-                    String staff = entry.getString("staff", "");
                     String tier = entry.getString("tier", "");
                     String recipe = entry.getString("recipe", "");
-                    elementDescriptions.put(key, new String[] { pillar, staff, tier, recipe });
+                    elementDescriptions.put(key, new String[] { pillar, tier, recipe });
                 }
             }
         } catch (Exception e) {
@@ -941,9 +940,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             return;
 
         String pillarDesc = desc[0];
-        String staffDesc = desc[1];
-        String tier = desc[2];
-        String recipe = desc[3];
+        String tier = desc[1];
+        String recipe = desc[2];
 
         float panelW = 340f * uiScale;
         float panelH = 280f * uiScale;
@@ -1006,7 +1004,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         textY -= lineH * 1.3f;
         uiFont.setColor(Color.WHITE);
         uiFont.getData().setScale(uiScale * 0.65f);
-        String description = "charm".equals(tooltipContext) ? staffDesc : pillarDesc;
+        String description = "charm".equals(tooltipContext)
+            ? getCharmDescription(hoveredTooltipElement)
+            : pillarDesc;
 
         float maxTextW = panelW - 32f * uiScale;
         glyphLayout.setText(uiFont, description, Color.WHITE, maxTextW, com.badlogic.gdx.utils.Align.left, true);
@@ -1218,6 +1218,12 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 staffBarY + headerH * 0.78f);
         if (equipped != null) {
             drawOrbTextureCentered(equipped, staffX, staffY, staffSize, staffSize);
+            uiFont.setColor(Color.BLACK);
+            uiFont.getData().setScale(uiScale * 0.46f);
+            String charmInfo = getCharmDescription(equipped);
+            glyphLayout.setText(uiFont, charmInfo, Color.BLACK, sectionW, com.badlogic.gdx.utils.Align.center, true);
+            uiFont.draw(uiBatch, glyphLayout, sectionX, staffY - 8f * uiScale);
+            uiFont.getData().setScale(uiScale * 0.54f);
         }
         uiBatch.draw(hudInfoIconTexture, staffInfoBtnX, staffInfoBtnY, staffInfoBtnSize, staffInfoBtnSize);
         uiBatch.end();
@@ -2227,6 +2233,36 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 break;
         }
         return new float[] { damage, range, speed };
+    }
+
+    private String getCharmDescription(Element element) {
+        if (element == null) {
+            return "";
+        }
+        switch (element) {
+            case FIRE:
+                return "+15% damage aura";
+            case WATER:
+                return "+15% attack speed aura";
+            case AIR:
+                return "+15% range aura";
+            case EARTH:
+                return "+10% damage and +10% range aura";
+            case STEAM:
+                return "+10% attack speed and +10% range aura";
+            case GOLD:
+                return "Kills in aura grant +10% bonus gold";
+            case ICE:
+                return "Every 3rd aura attack freezes; thaw hit deals 300%";
+            case LIGHT:
+                return "+20% range and +10% attack speed aura";
+            case POISON:
+                return "Aura attacks reduce enemy healing by 40% (stacks)";
+            case LIFE:
+                return "Kill frenzy: next aura hit deals 250%";
+            default:
+                return "";
+        }
     }
 
     private void updatePillarMultipliers() {

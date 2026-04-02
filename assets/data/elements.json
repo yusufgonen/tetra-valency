@@ -2,67 +2,57 @@
     "FIRE": {
         "name": "Fire",
         "tier": "Prime",
-        "pillar": "Deals ramping damage to a single target. The longer it focuses on the same enemy, the more damage it deals — similar to an inferno beam.",
-        "charm": "Grants +15% attack damage to all pillars within the Alchemist's aura range."
+        "pillar": "Deals ramping damage to a single target. The longer it focuses on the same enemy, the more damage it deals — similar to an inferno beam."
     },
     "WATER": {
         "name": "Water",
         "tier": "Prime",
-        "pillar": "Slows enemies hit by its attacks, reducing their movement speed.",
-        "charm": "Grants +15% attack speed to all pillars within the Alchemist's aura range."
+        "pillar": "Slows enemies hit by its attacks, reducing their movement speed."
     },
     "AIR": {
         "name": "Air",
         "tier": "Prime",
-        "pillar": "Knocks enemies back along the path on each hit.",
-        "charm": "Grants +15% range to all pillars within the Alchemist's aura range."
+        "pillar": "Knocks enemies back along the path on each hit."
     },
     "EARTH": {
         "name": "Earth",
         "tier": "Prime",
-        "pillar": "Has a very slow attack speed. Each attack stuns all enemies within its range for 0.5 seconds.",
-        "charm": "Grants +5% attack speed, +5% attack damage, and +5% range to all pillars within the Alchemist's aura range."
+        "pillar": "Has a very slow attack speed. Each attack stuns all enemies within its range for 0.5 seconds."
     },
     "GOLD": {
         "name": "Gold",
         "tier": "Hybrid",
         "recipe": "Fire + Earth",
-        "pillar": "Does not attack enemies. Passively generates gold over time.",
-        "charm": "Pillars within aura range earn +10% bonus gold when defeating an enemy."
+        "pillar": "Does not attack enemies. Passively generates gold over time."
     },
     "ICE": {
         "name": "Ice",
         "tier": "Hybrid",
         "recipe": "Water + Air",
-        "pillar": "Freezes enemies solid on hit. Has a slow attack speed.",
-        "charm": "Pillars within aura range build up frost — every 3rd attack triggers a freeze. The first attack after the freeze thaws deals 300% damage."
+        "pillar": "Freezes enemies solid on hit. Has a slow attack speed."
     },
     "LIFE": {
         "name": "Life",
         "tier": "Hybrid",
         "recipe": "Earth + Air",
-        "pillar": "Does not actively attack. Revives enemies killed within its range as allied units at the end of the path.",
-        "charm": "Pillars within aura range gain a kill frenzy — after defeating an enemy, their next attack deals 250% damage."
+        "pillar": "Does not actively attack. Revives enemies killed within its range as allied units at the end of the path."
     },
     "LIGHT": {
         "name": "Light",
         "tier": "Hybrid",
         "recipe": "Fire + Air",
-        "pillar": "Deals damage proportional to the enemy's current health — the more HP they have, the harder it hits.",
-        "charm": "For each enemy within aura range, all pillars in range receive +4% attack damage."
+        "pillar": "Deals damage proportional to the enemy's current health — the more HP they have, the harder it hits."
     },
     "POISON": {
         "name": "Poison",
         "tier": "Hybrid",
         "recipe": "Water + Earth",
-        "pillar": "Each attack poisons the target for 5 seconds. Poison stacks. Reduces healing efficiency of affected enemies by 75% (stacks).",
-        "charm": "Attacks from pillars within aura range reduce enemy healing by 40%. This effect stacks."
+        "pillar": "Each attack poisons the target for 5 seconds. Poison stacks. Reduces healing efficiency of affected enemies by 75% (stacks)."
     },
     "STEAM": {
         "name": "Steam",
         "tier": "Hybrid",
         "recipe": "Fire + Water",
-        "pillar": "Pushes enemies back along the path based on their current health — lower HP enemies are pushed further back.",
-        "charm": "Pillars within aura range deal +25% bonus damage against boss enemies."
+        "pillar": "Pushes enemies back along the path based on their current health — lower HP enemies are pushed further back."
     }
 }
