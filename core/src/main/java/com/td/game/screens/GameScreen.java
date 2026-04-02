@@ -788,11 +788,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             renderEnemyHoverUI(screenWidth, screenHeight);
         }
 
-        if (gameOver)
-            renderGameOver(screenWidth, screenHeight);
-        else if (gameWon)
-            renderGameWon(screenWidth, screenHeight);
-        else if (paused)
+        if (paused)
             renderPauseMenu(screenWidth, screenHeight);
 
         renderMessages(screenWidth, screenHeight);
@@ -1537,81 +1533,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             uiFont.setColor(Color.GRAY);
             uiFont.draw(uiBatch, "Elemental Orb Needed!", tx, ty);
         }
-        uiBatch.end();
-    }
-
-    private void renderGameOver(int w, int h) {
-        uiBatch.begin();
-        uiBatch.setColor(1f, 1f, 1f, 1f);
-        uiBatch.draw(pauseMenuBackgroundTexture, 0, 0, w, h);
-        uiFont.setColor(Color.RED);
-        uiFont.getData().setScale(uiScale * 1.8f);
-        uiFont.draw(uiBatch, "GAME OVER", w / 2 - 150 * uiScale, h / 2 + 150 * uiScale);
-        uiFont.getData().setScale(uiScale * 0.54f);
-
-        int minutes = (int) (globalTimer / 60);
-        int seconds = (int) (globalTimer % 60);
-        String timerString = String.format("Time: %02d:%02d", minutes, seconds);
-        uiFont.setColor(Color.WHITE);
-        glyphLayout.setText(uiFont, timerString);
-        uiFont.draw(uiBatch, timerString, (w - glyphLayout.width) / 2, h / 2 - 180 * uiScale);
-        uiBatch.end();
-
-        float btnW = 300 * uiScale;
-        float btnH = 60 * uiScale;
-        float btnX = (w - btnW) / 2;
-        float menuY = h / 2 - btnH / 2;
-
-        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        uiShapeRenderer.setColor(0.56f, 0.43f, 0.33f, 1f);
-        uiShapeRenderer.rect(btnX, menuY, btnW, btnH);
-        uiShapeRenderer.end();
-
-        uiBatch.begin();
-        uiFontLarge.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
-        glyphLayout.setText(uiFontLarge, "Main Menu");
-        uiFontLarge.draw(uiBatch, "Main Menu", btnX + (btnW - glyphLayout.width) / 2,
-                menuY + (btnH + glyphLayout.height) / 2);
-        uiBatch.end();
-    }
-
-    private void renderGameWon(int w, int h) {
-        uiBatch.begin();
-        uiBatch.setColor(1f, 1f, 1f, 1f);
-        uiBatch.draw(pauseMenuBackgroundTexture, 0, 0, w, h);
-        uiFont.setColor(Color.GREEN);
-        uiFont.getData().setScale(uiScale * 1.8f);
-        uiFont.draw(uiBatch, "YOU WIN!", w / 2 - 120 * uiScale, h / 2 + 150 * uiScale);
-        uiFont.getData().setScale(uiScale * 0.54f);
-
-        int minutes = (int) (globalTimer / 60);
-        int seconds = (int) (globalTimer % 60);
-        String timerString = String.format("Time: %02d:%02d", minutes, seconds);
-        uiFont.setColor(Color.WHITE);
-        glyphLayout.setText(uiFont, timerString);
-        uiFont.draw(uiBatch, timerString, (w - glyphLayout.width) / 2, h / 2 - 180 * uiScale);
-        uiBatch.end();
-
-        float btnW = 300 * uiScale;
-        float btnH = 60 * uiScale;
-        float btnX = (w - btnW) / 2;
-        float freeY = h / 2 + 10 * uiScale;
-        float menuY = h / 2 - 70 * uiScale;
-
-        uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        uiShapeRenderer.setColor(0.56f, 0.43f, 0.33f, 1f);
-        uiShapeRenderer.rect(btnX, freeY, btnW, btnH);
-        uiShapeRenderer.rect(btnX, menuY, btnW, btnH);
-        uiShapeRenderer.end();
-
-        uiBatch.begin();
-        uiFontLarge.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
-        glyphLayout.setText(uiFontLarge, "Continue Freeplay");
-        uiFontLarge.draw(uiBatch, "Continue Freeplay", btnX + (btnW - glyphLayout.width) / 2,
-                freeY + (btnH + glyphLayout.height) / 2);
-        glyphLayout.setText(uiFontLarge, "Main Menu");
-        uiFontLarge.draw(uiBatch, "Main Menu", btnX + (btnW - glyphLayout.width) / 2,
-                menuY + (btnH + glyphLayout.height) / 2);
         uiBatch.end();
     }
 
@@ -2524,19 +2445,11 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
         
         if (economyManager.isGameOver()) {
-            if (!gameOver) {
-                gameOver = true;
-                playLoseSfxOnce();
-            }
-            com.td.game.systems.SaveManager.deleteSave(mapType);
+            lose(globalTimer);
             return;
         }
         if (waveManager.areAllWavesComplete() && waveManager.getAliveEnemyCount() == 0) {
-            if (!gameWon) {
-                gameWon = true;
-                playVictorySfxOnce();
-            }
-            com.td.game.systems.SaveManager.deleteSave(mapType);
+            winNormal(globalTimer);
             return;
         }
 
@@ -2654,42 +2567,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 return true;
             }
 
-            if (gameOver && button == Input.Buttons.LEFT) {
-                float sw = Gdx.graphics.getWidth();
-                float sh = Gdx.graphics.getHeight();
-                float btnW = 300 * uiScale;
-                float btnH = 60 * uiScale;
-                float btnX = (sw - btnW) / 2;
-                float menuY = sh / 2 - btnH / 2;
-                if (isInRect(screenX, flippedY, btnX, menuY, btnW, btnH)) {
-                    game.audio.playClick();
-                    game.audio.playMenuMusic();
-                    game.setScreen(new MainMenuScreen(game));
-                    dispose();
-                }
-                return true;
-            }
-
-            if (gameWon && button == Input.Buttons.LEFT) {
-                float sw = Gdx.graphics.getWidth();
-                float sh = Gdx.graphics.getHeight();
-                float btnW = 300 * uiScale;
-                float btnH = 60 * uiScale;
-                float btnX = (sw - btnW) / 2;
-                float freeY = sh / 2 + 10 * uiScale;
-                float menuY = sh / 2 - 70 * uiScale;
-
-                if (isInRect(screenX, flippedY, btnX, freeY, btnW, btnH)) {
-                    gameWon = false;
-                } else if (isInRect(screenX, flippedY, btnX, menuY, btnW, btnH)) {
-                    game.audio.playClick();
-                    game.audio.playMenuMusic();
-                    game.setScreen(new MainMenuScreen(game));
-                    dispose();
-                }
-                return true;
-            }
-
             if (paused && button == Input.Buttons.LEFT) {
                 float sw = Gdx.graphics.getWidth();
                 float sh = Gdx.graphics.getHeight();
@@ -2786,8 +2663,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 if (isInRect(screenX, flippedY, playBtnX, playBtnY, playBtnW, playBtnH)) {
                     if (!waveManager.isWaveInProgress()) {
                         if (waveManager.areAllWavesComplete()) {
-                            gameWon = true;
-                            playVictorySfxOnce();
+                            winNormal(globalTimer);
                         } else if (!augmentChoiceActive) {
                             saveGameState();
                             tryStartNextWave();
