@@ -1374,7 +1374,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         uiBatch.begin();
         uiFontLarge.setColor(Color.BLACK);
 
-        String seeAugText = "SEE AUGMENTS";
+        String seeAugText = " SEE AUGMENTS ";
         glyphLayout.setText(uiFontLarge, seeAugText);
         if (glyphLayout.width > seeAugmentsBtnW - 4f) {
             uiFont.setColor(Color.BLACK);
