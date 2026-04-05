@@ -173,7 +173,7 @@ public class Pillar implements Disposable {
     private com.td.game.entities.Enemy findTarget(com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies) {
         if (currentElement == Element.FIRE && fireAttack != null) {
             com.td.game.entities.Enemy last = fireAttack.getLastTarget();
-            if (last != null && last.isAlive() && position.dst(last.getPosition()) <= getAttackRange()) {
+            if (last != null && last.isAlive() && !last.isAllied() && position.dst(last.getPosition()) <= getAttackRange()) {
                 return last;
             }
         }
@@ -182,7 +182,7 @@ public class Pillar implements Disposable {
         float minDist = getAttackRange();
 
         for (com.td.game.entities.Enemy enemy : enemies) {
-            if (!enemy.isAlive()) continue;
+            if (!enemy.isAlive() || enemy.isAllied()) continue;
             float dist = position.dst(enemy.getPosition());
             if (dist < minDist) {
                 minDist = dist;

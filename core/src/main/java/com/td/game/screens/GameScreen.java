@@ -3349,7 +3349,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
     private void handleProjectileImpact(com.td.game.entities.Projectile proj) {
         com.td.game.entities.Enemy target = proj.getTargetEnemy();
-        if (target == null || !target.isAlive())
+        if (target == null || !target.isAlive() || target.isAllied())
             return;
 
         Element element = proj.getElement();
@@ -3368,7 +3368,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             case FIRE:
                 
                 for (com.td.game.entities.Enemy e : waveManager.getActiveEnemies()) {
-                    if (e != target && e.isAlive() && e.getPosition().dst(target.getPosition()) < 3.0f) {
+                    if (e != target && e.isAlive() && !e.isAllied() && e.getPosition().dst(target.getPosition()) < 3.0f) {
                         e.takeDamage(damage * 0.5f, element, sourcePillar);
                     }
                 }
