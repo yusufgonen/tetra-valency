@@ -1,5 +1,10 @@
 package com.td.game.screens;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
@@ -19,8 +24,11 @@ import com.td.game.map.GameMap;
 import com.td.game.utils.Dreamlo;
 
 public class EndlessLeaderboardScreen implements Screen {
+    private static final int TOP_COUNT = 5;
     private final TowerDefenseGame game;
     private final GameMap.MapType mapType;
+    private final String submittedName;
+    private final int submittedWave;
     private SpriteBatch batch;
     private ShapeRenderer shapes;
     private BitmapFont font;
@@ -32,8 +40,15 @@ public class EndlessLeaderboardScreen implements Screen {
     private boolean loaded;
 
     public EndlessLeaderboardScreen(TowerDefenseGame game, GameMap.MapType mapType) {
+        this(game, mapType, null, -1);
+    }
+
+    public EndlessLeaderboardScreen(TowerDefenseGame game, GameMap.MapType mapType, String submittedName,
+            int submittedWave) {
         this.game = game;
         this.mapType = mapType;
+        this.submittedName = submittedName == null ? "" : submittedName.trim();
+        this.submittedWave = submittedWave;
     }
 
     @Override
@@ -46,7 +61,7 @@ public class EndlessLeaderboardScreen implements Screen {
         bgTexture = loadTextureSafe("ui/main_menu_bg.png");
         backBtn = new Rectangle(40f, 32f, 170f, 52f);
         loaded = false;
-        Dreamlo.fetchScores(false, mapType, data -> Gdx.app.postRunnable(() -> {
+        Dreamlo.fetchScores(false, mapType, 50, data -> Gdx.app.postRunnable(() -> {
             entries = data == null ? new String[0][0] : data;
             loaded = true;
         }));
@@ -78,23 +93,88 @@ public class EndlessLeaderboardScreen implements Screen {
         drawCentered(titleFont, "ENDLESS LEADERBOARD", 0, h - 70f, w);
 
         float y = h - 140f;
-        int idx = 1;
-        for (String[] e : entries) {
-            int wave = parseIntSafe(e[1]);
-            String line = idx + ". " + e[0] + " - Wave " + wave;
-            font.setColor(Color.WHITE);
+        List<DisplayRow> rows = buildRowsToRender();
+        boolean separatorAdded = false;
+        for (DisplayRow row : rows) {
+            if (!row.inTopSection && !separatorAdded) {
+                y -= 22f;
+                separatorAdded = true;
+            }
+            String line = row.rank + ". " + row.name + " - Wave " + row.wave;
+            font.setColor(row.isSubmitted ? new Color(0.95f, 0.84f, 0.35f, 1f) : Color.WHITE);
             drawCentered(font, line, 0f, y, w);
             y -= 42f;
-            idx++;
-            if (idx > 10)
-                break;
         }
-        if (idx == 1) {
+        if (rows.isEmpty()) {
             drawCentered(font, loaded ? "No entries yet." : "Loading...", 0f, y, w);
         }
         font.setColor(new Color(0.14f, 0.1f, 0.06f, 1f));
         drawCentered(font, "Back", backBtn.x, backBtn.y + 34f, backBtn.width);
         batch.end();
+    }
+
+    private List<DisplayRow> buildRowsToRender() {
+        List<RankedEntry> all = new ArrayList<>();
+        for (String[] e : entries) {
+            if (e.length < 2) {
+                continue;
+            }
+            all.add(new RankedEntry(e[0], parseIntSafe(e[1]), false));
+        }
+
+        int submittedIndex = -1;
+        if (!submittedName.isEmpty() && submittedWave >= 0) {
+            for (int i = 0; i < all.size(); i++) {
+                RankedEntry entry = all.get(i);
+                if (entry.name.equals(submittedName) && entry.wave == submittedWave) {
+                    submittedIndex = i;
+                    entry.isSubmitted = true;
+                    break;
+                }
+            }
+            if (submittedIndex == -1) {
+                all.add(new RankedEntry(submittedName, submittedWave, true));
+                all.sort((a, b) -> Integer.compare(b.wave, a.wave));
+                for (int i = 0; i < all.size(); i++) {
+                    if (all.get(i).isSubmitted) {
+                        submittedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<DisplayRow> rows = new ArrayList<>();
+        Set<Integer> usedIndices = new HashSet<>();
+
+        int top = Math.min(TOP_COUNT, all.size());
+        for (int i = 0; i < top; i++) {
+            addDisplayRow(rows, all, usedIndices, i);
+        }
+
+        if (submittedIndex >= TOP_COUNT) {
+            addDisplayRow(rows, all, usedIndices, submittedIndex - 1);
+            addDisplayRow(rows, all, usedIndices, submittedIndex);
+            addDisplayRow(rows, all, usedIndices, submittedIndex + 1);
+        }
+
+        if (rows.isEmpty() && !all.isEmpty()) {
+            int maxRows = Math.min(10, all.size());
+            for (int i = 0; i < maxRows; i++) {
+                addDisplayRow(rows, all, usedIndices, i);
+            }
+        }
+
+        return rows;
+    }
+
+    private void addDisplayRow(List<DisplayRow> out, List<RankedEntry> all, Set<Integer> usedIndices, int index) {
+        if (index < 0 || index >= all.size() || usedIndices.contains(index)) {
+            return;
+        }
+        usedIndices.add(index);
+        RankedEntry entry = all.get(index);
+        out.add(new DisplayRow(index + 1, entry.name, entry.wave, entry.isSubmitted, index < TOP_COUNT));
     }
 
     private void drawCentered(BitmapFont f, String text, float x, float baselineY, float width) {
@@ -202,6 +282,34 @@ public class EndlessLeaderboardScreen implements Screen {
                 return true;
             }
             return false;
+        }
+    }
+
+    private static final class RankedEntry {
+        final String name;
+        final int wave;
+        boolean isSubmitted;
+
+        RankedEntry(String name, int wave, boolean isSubmitted) {
+            this.name = name;
+            this.wave = wave;
+            this.isSubmitted = isSubmitted;
+        }
+    }
+
+    private static final class DisplayRow {
+        final int rank;
+        final String name;
+        final int wave;
+        final boolean isSubmitted;
+        final boolean inTopSection;
+
+        DisplayRow(int rank, String name, int wave, boolean isSubmitted, boolean inTopSection) {
+            this.rank = rank;
+            this.name = name;
+            this.wave = wave;
+            this.isSubmitted = isSubmitted;
+            this.inTopSection = inTopSection;
         }
     }
 }

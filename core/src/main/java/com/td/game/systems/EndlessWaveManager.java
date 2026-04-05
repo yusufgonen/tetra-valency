@@ -13,6 +13,7 @@ public class EndlessWaveManager extends WaveManager {
 
     public EndlessWaveManager(Array<Vector3> pathWaypoints, ModelFactory modelFactory) {
         super(pathWaypoints, modelFactory);
+        setCurrentWave(ENDLESS_START_WAVE);
     }
 
     @Override
