@@ -70,7 +70,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private Array<com.badlogic.gdx.math.Vector3> pathWaypoints;
     private ModelFactory modelFactory;
     private int currentWave = 0;
-    private final int maxWaves = 50;
 
     private GameShop shop;
     private Inventory inventory;
@@ -1137,7 +1136,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         glyphLayout.setText(uiFontLarge, livesStr);
         float livesEndX = 70f * uiScale + glyphLayout.width;
 
-        String waveText = "WAVE " + (waveManager != null ? waveManager.getCurrentWave() : 0) + "/" + maxWaves;
+        int waveCap = waveManager != null ? waveManager.getMaxWaves() : 50;
+        String waveText = "WAVE " + (waveManager != null ? waveManager.getCurrentWave() : 0) + "/" + waveCap;
         glyphLayout.setText(uiFontLarge, waveText);
         float waveStartX = mapAreaWidth - glyphLayout.width - 28f * uiScale;
         uiFontLarge.setColor(hudTopColor);
