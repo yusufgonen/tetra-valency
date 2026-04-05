@@ -32,6 +32,7 @@ public class ConsoleMenu {
 
     public static class Layout {
         public final Rectangle panel = new Rectangle();
+        public final Rectangle closeButton = new Rectangle();
         public final Rectangle livesInputBox = new Rectangle();
         public final Rectangle goldInputBox = new Rectangle();
         public final Rectangle waveBox = new Rectangle();
@@ -82,6 +83,11 @@ public class ConsoleMenu {
             goldInput = "";
             augmentInput = "";
         }
+    }
+
+    public void close() {
+        open = false;
+        activeInput = INPUT_NONE;
     }
 
     public boolean handleKeyDown(int keycode, Context ctx) {
@@ -141,6 +147,11 @@ public class ConsoleMenu {
             return false;
         }
         Layout layout = getLayout(screenWidth, screenHeight, uiScale, getButtonLabels().length);
+        if (isInRect(screenX, flippedY, layout.closeButton.x, layout.closeButton.y,
+                layout.closeButton.width, layout.closeButton.height)) {
+            close();
+            return true;
+        }
         if (isInRect(screenX, flippedY, layout.livesInputBox.x, layout.livesInputBox.y,
                 layout.livesInputBox.width, layout.livesInputBox.height)) {
             activeInput = INPUT_LIVES;
@@ -203,11 +214,14 @@ public class ConsoleMenu {
         for (Rectangle button : layout.buttons) {
             uiShapeRenderer.rect(button.x, button.y, button.width, button.height);
         }
+        uiShapeRenderer.setColor(0.22f, 0.08f, 0.08f, 0.98f);
+        uiShapeRenderer.rect(layout.closeButton.x, layout.closeButton.y, layout.closeButton.width, layout.closeButton.height);
         uiShapeRenderer.end();
 
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         uiShapeRenderer.setColor(0.95f, 0.95f, 0.95f, 1f);
         uiShapeRenderer.rect(layout.panel.x, layout.panel.y, layout.panel.width, layout.panel.height);
+        uiShapeRenderer.rect(layout.closeButton.x, layout.closeButton.y, layout.closeButton.width, layout.closeButton.height);
         uiShapeRenderer.rect(layout.livesInputBox.x, layout.livesInputBox.y, layout.livesInputBox.width, layout.livesInputBox.height);
         uiShapeRenderer.rect(layout.goldInputBox.x, layout.goldInputBox.y, layout.goldInputBox.width, layout.goldInputBox.height);
         uiShapeRenderer.rect(layout.waveBox.x, layout.waveBox.y, layout.waveBox.width, layout.waveBox.height);
@@ -224,6 +238,12 @@ public class ConsoleMenu {
         uiFontLarge.draw(uiBatch, glyphLayout,
                 layout.panel.x + (layout.panel.width - glyphLayout.width) * 0.5f,
                 layout.titleY);
+
+        uiFontLarge.getData().setScale(uiScale * 0.46f);
+        glyphLayout.setText(uiFontLarge, "X", Color.WHITE, layout.closeButton.width,
+                com.badlogic.gdx.utils.Align.center, false);
+        float closeTextY = layout.closeButton.y + layout.closeButton.height * 0.5f + glyphLayout.height * 0.5f;
+        uiFontLarge.draw(uiBatch, glyphLayout, layout.closeButton.x, closeTextY);
 
         uiFont.getData().setScale(uiScale * 0.50f);
         uiFont.setColor(Color.WHITE);
@@ -524,8 +544,12 @@ public class ConsoleMenu {
         float innerPadding = 10f * uiScale;
         float contentX = panelX + innerPadding;
         float contentW = panelW - innerPadding * 2f;
+        float closeSize = 22f * uiScale;
 
         layout.titleY = panelY + panelH - titleInset;
+        layout.closeButton.set(panelX + panelW - innerPadding - closeSize,
+                panelY + panelH - innerPadding - closeSize,
+                closeSize, closeSize);
         layout.livesLabelY = layout.titleY - titleToFirstLabel;
         float livesInputY = layout.livesLabelY - labelToInputGap - inputBoxH;
         layout.livesInputBox.set(contentX, livesInputY, contentW, inputBoxH);
