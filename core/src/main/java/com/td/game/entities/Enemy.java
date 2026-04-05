@@ -889,6 +889,10 @@ public class Enemy implements Disposable {
         return poisonStacks;
     }
 
+    public int getCurrentWaypointIndex() {
+        return currentWaypointIndex;
+    }
+
     public boolean isPoisonBurstActive() {
         return poisonFlashTimer > 0;
     }

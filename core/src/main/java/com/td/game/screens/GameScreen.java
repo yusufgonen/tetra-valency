@@ -217,13 +217,14 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private boolean earthAftershockEnabled = false;
     private boolean iceAbsoluteZeroEnabled = false;
     private boolean poisonToxicSpillEnabled = false;
+    private boolean lightPrismEnabled = false;
     private final HashMap<com.td.game.entities.Enemy, Integer> tidalSealHits = new HashMap<>();
     private final HashMap<com.td.game.entities.Enemy, Float> turbulenceTimers = new HashMap<>();
     private final HashMap<com.td.game.entities.Enemy, Integer> toxicSpillHits = new HashMap<>();
     private static final int MERGE_COST = 20;
     private static final float INFO_PANEL_SHIFT_DOWN = 100f;
     private static final float GATE_MODEL_SCALE_MULTIPLIER = 2.0f;
-    private static final int MAX_AUGMENT_ID = 14;
+    private static final int MAX_AUGMENT_ID = 15;
 
     public GameScreen(TowerDefenseGame game) {
         this(game, GameMap.MapType.ELEMENTAL_CASTLE, false);
@@ -1978,6 +1979,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             case 14:
                 path = "ui/augment_icon_toxic_spill.png";
                 break;
+            case 15:
+                path = "ui/augment_icon_prism.png";
+                break;
         }
         com.badlogic.gdx.files.FileHandle file = resolveAsset(path);
         if (file.exists()) {
@@ -2115,6 +2119,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         this.earthAftershockEnabled = false;
         this.iceAbsoluteZeroEnabled = false;
         this.poisonToxicSpillEnabled = false;
+        this.lightPrismEnabled = false;
         this.tidalSealHits.clear();
         this.turbulenceTimers.clear();
         this.toxicSpillHits.clear();
@@ -2136,6 +2141,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 this.iceAbsoluteZeroEnabled = true;
             } else if (augId == 14) {
                 this.poisonToxicSpillEnabled = true;
+            } else if (augId == 15) {
+                this.lightPrismEnabled = true;
             }
         }
     }
@@ -2218,6 +2225,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 poisonToxicSpillEnabled = true;
                 showMessage("Augment: Toxic Spill");
                 break;
+            case 15:
+                lightPrismEnabled = true;
+                showMessage("Augment: Prism");
+                break;
             default:
                 break;
         }
@@ -2255,6 +2266,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 return "Absolute Zero";
             case 14:
                 return "Toxic Spill";
+            case 15:
+                return "Prism";
             default:
                 return "Unknown";
         }
@@ -2292,6 +2305,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 return "Frozen enemy deaths freeze nearby enemies in a small radius";
             case 14:
                 return "Every 5 poison applications trigger an instant stack explosion";
+            case 15:
+                return "Light pillars always target the highest-health enemy in range";
             default:
                 return "-";
         }
@@ -2390,6 +2405,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 speed *= aura[2];
             }
             pillar.setExternalMultipliers(damage, range, speed);
+            pillar.setPrismActive(lightPrismEnabled);
         }
     }
 

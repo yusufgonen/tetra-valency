@@ -39,6 +39,7 @@ public class Pillar implements Disposable {
     private boolean poisonCharmActive = false;
     private boolean lifeCharmActive = false;
     private boolean lifeFrenzyReady = false;
+    private boolean prismActive = false;
 
     private float currentCooldown = 0f;
     private final float baseAttackCooldown = PillarData.BASE_ATTACK_COOLDOWN;
@@ -171,6 +172,41 @@ public class Pillar implements Disposable {
     }
 
     private com.td.game.entities.Enemy findTarget(com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies) {
+        if (currentElement == Element.LIGHT && prismActive) {
+            com.td.game.entities.Enemy highestHpTarget = null;
+            float highestHp = -1f;
+            int bestCoreProgress = Integer.MIN_VALUE;
+            float range = getAttackRange();
+
+            for (com.td.game.entities.Enemy enemy : enemies) {
+                if (!enemy.isAlive() || enemy.isAllied()) {
+                    continue;
+                }
+                if (position.dst(enemy.getPosition()) <= range) {
+                    float hp = enemy.getHealth();
+                    int coreProgress = enemy.getCurrentWaypointIndex();
+                    if (hp > highestHp) {
+                        highestHp = hp;
+                        bestCoreProgress = coreProgress;
+                        highestHpTarget = enemy;
+                    } else if (Math.abs(hp - highestHp) <= 0.001f) {
+                        if (coreProgress > bestCoreProgress) {
+                            bestCoreProgress = coreProgress;
+                            highestHpTarget = enemy;
+                        } else if (coreProgress == bestCoreProgress
+                                && highestHpTarget != null
+                                && position.dst(enemy.getPosition()) < position.dst(highestHpTarget.getPosition())) {
+                            highestHpTarget = enemy;
+                        }
+                    }
+                }
+            }
+
+            if (highestHpTarget != null) {
+                return highestHpTarget;
+            }
+        }
+
         if (currentElement == Element.FIRE && fireAttack != null) {
             com.td.game.entities.Enemy last = fireAttack.getLastTarget();
             if (last != null && last.isAlive() && !last.isAllied() && position.dst(last.getPosition()) <= getAttackRange()) {
@@ -414,6 +450,10 @@ public class Pillar implements Disposable {
         if (!lifeCharmActive) {
             lifeFrenzyReady = false;
         }
+    }
+
+    public void setPrismActive(boolean prismActive) {
+        this.prismActive = prismActive;
     }
 
     public void activateLifeFrenzy() {
