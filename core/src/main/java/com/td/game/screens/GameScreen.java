@@ -204,10 +204,11 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private float globalAttackSpeedMult = 1f;
     private float staffAuraRadius = 8f;
     private boolean lifeReviveBossesEnabled = false;
+    private boolean fireChainOfAhesEnabled = false;
     private static final int MERGE_COST = 20;
     private static final float INFO_PANEL_SHIFT_DOWN = 100f;
     private static final float GATE_MODEL_SCALE_MULTIPLIER = 2.0f;
-    private static final int MAX_AUGMENT_ID = 8;
+    private static final int MAX_AUGMENT_ID = 9;
 
     public GameScreen(TowerDefenseGame game) {
         this(game, GameMap.MapType.ELEMENTAL_CASTLE, false);
@@ -1944,6 +1945,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             case 8:
                 path = "ui/augment_icon_necromance.png";
                 break;
+            case 9:
+                path = "ui/augment_icon_chain_of_ashes.png";
+                break;
         }
         com.badlogic.gdx.files.FileHandle file = resolveAsset(path);
         if (file.exists()) {
@@ -2075,12 +2079,15 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         this.globalAttackSpeedMult = data.globalAttackSpeedMult;
         this.staffAuraRadius = data.staffAuraRadius;
         this.lifeReviveBossesEnabled = data.lifeReviveBossesEnabled;
+        this.fireChainOfAhesEnabled = false;
 
         this.acquiredAugments.clear();
         for (int augId : data.acquiredAugments) {
             this.acquiredAugments.add(new AcquiredAugment(augId));
             if (augId == 8) {
                 this.lifeReviveBossesEnabled = true;
+            } else if (augId == 9) {
+                this.fireChainOfAhesEnabled = true;
             }
         }
     }
@@ -2139,6 +2146,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 lifeReviveBossesEnabled = true;
                 showMessage("Augment: Necromancy");
                 break;
+            case 9:
+                fireChainOfAhesEnabled = true;
+                showMessage("Augment: Chain of Ahes");
+                break;
             default:
                 break;
         }
@@ -2164,6 +2175,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 return "Expanding Aura";
             case 8:
                 return "Necromancy";
+            case 9:
+                return "Chain of Ahes";
             default:
                 return "Unknown";
         }
@@ -2189,6 +2202,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 return "Alchemist aura radius +30%";
             case 8:
                 return "Life can revive bosses";
+            case 9:
+                return "Fire impacts chain to a nearby enemy for bonus damage and burn";
             default:
                 return "-";
         }
@@ -3370,6 +3385,25 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 for (com.td.game.entities.Enemy e : waveManager.getActiveEnemies()) {
                     if (e != target && e.isAlive() && !e.isAllied() && e.getPosition().dst(target.getPosition()) < 3.0f) {
                         e.takeDamage(damage * 0.5f, element, sourcePillar);
+                    }
+                }
+                if (fireChainOfAhesEnabled) {
+                    com.td.game.entities.Enemy chainTarget = null;
+                    float nearestDist = 4.5f;
+                    for (com.td.game.entities.Enemy e : waveManager.getActiveEnemies()) {
+                        if (e == null || e == target || !e.isAlive() || e.isAllied()) {
+                            continue;
+                        }
+                        float dist = e.getPosition().dst(target.getPosition());
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            chainTarget = e;
+                        }
+                    }
+                    if (chainTarget != null) {
+                        chainTarget.takeDamage(damage * 0.35f, element, sourcePillar);
+                        chainTarget.applyBurn(2f, damage * 0.12f);
+                        spawnEffect(chainTarget.getPosition(), element, 0.35f, 0.9f);
                     }
                 }
                 target.applyBurn(3f, damage * 0.2f);
