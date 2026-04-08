@@ -28,11 +28,8 @@ through economy and positioning decisions across enemy waves.
 
 ## Running the Game
 1. Clone the repository:
-   ```bash
+   ```powershell
    git clone https://github.com/cosmovisi0n/tetra-valency.git
-   cd Tetra Valency
+   cd tetra-valency
    ```
-2. Run the game
-   ```bash
-   ./gradlew lwjgl3:run
-   ```
+2. Run `run-lwjgl3.bat` in your folder.
