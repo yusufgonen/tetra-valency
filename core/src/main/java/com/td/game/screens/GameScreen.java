@@ -2605,6 +2605,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         boolean wasWaveInProgress = waveManager.isWaveInProgress();
         waveManager.update(delta);
         if (wasWaveInProgress && !waveManager.isWaveInProgress() && waveManager.getCurrentWave() > 0) {
+            clearWaveLimitedAllies();
             game.audio.playWaveComplete();
             if (goldFundEnabled) {
                 int finishedWave = waveManager.getCurrentWave();
@@ -3486,21 +3487,28 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         }
 
         boolean hasAllElementsAffinity = hoveredEnemy.hasAllElementsAffinity();
+        boolean alliedEnemy = hoveredEnemy.isAllied();
         String elemName = hasAllElementsAffinity
             ? "All Elements"
             : ((hoveredEnemy.getElement() != null) ? hoveredEnemy.getElement().getDisplayName() : "No Element");
+        if (alliedEnemy) {
+            elemName = "Life Ally";
+        }
         String elemInfo = hasAllElementsAffinity
             ? "20% less damage from all elements. Carries all elemental traits."
             : "";
         String hpStr = String.format("HP: %.0f / %.0f", Math.max(0, hoveredEnemy.getHealth()),
                 hoveredEnemy.getMaxHealth());
+        String damageStr = alliedEnemy
+                ? String.format("Damage: %.0f", getLifeAllyContactDamage(hoveredEnemy))
+                : null;
         boolean hasArmorLayer = hoveredEnemy.getMaxArmorLayer() > 0f;
         String armorStr = hasArmorLayer
             ? String.format("Armor: %.0f / %.0f", Math.max(0, hoveredEnemy.getArmorLayer()), hoveredEnemy.getMaxArmorLayer())
             : null;
 
         float panelW = 220f * uiScale;
-        float panelH = hasAllElementsAffinity ? 128f * uiScale : (hasArmorLayer ? 114f * uiScale : 95f * uiScale);
+        float panelH = alliedEnemy ? 95f * uiScale : (hasAllElementsAffinity ? 128f * uiScale : (hasArmorLayer ? 114f * uiScale : 95f * uiScale));
 
         px -= panelW / 2;
         if (px + panelW > screenWidth)
@@ -3525,8 +3533,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         float hpBarX = px + 10f * uiScale;
         float hpBarY = py + 12f * uiScale;
 
-        uiShapeRenderer.setColor(0.05f, 0.05f, 0.05f, 0.9f);
-        uiShapeRenderer.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+        if (!alliedEnemy) {
+            uiShapeRenderer.setColor(0.05f, 0.05f, 0.05f, 0.9f);
+            uiShapeRenderer.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+        }
 
         Color healthColor;
         if (hasAllElementsAffinity) {
@@ -3548,22 +3558,24 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             }
         }
 
-        boolean armoredEnemy = hasArmorLayer;
-        if (armoredEnemy) {
-            float halfBarWidth = hpBarWidth * 0.5f;
-            float healthPercent = MathUtils.clamp(Math.max(0f, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth(), 0f, 1f);
-            float armorPercent = hoveredEnemy.getArmorLayerPercent();
+        if (!alliedEnemy) {
+            boolean armoredEnemy = hasArmorLayer;
+            if (armoredEnemy) {
+                float halfBarWidth = hpBarWidth * 0.5f;
+                float healthPercent = MathUtils.clamp(Math.max(0f, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth(), 0f, 1f);
+                float armorPercent = hoveredEnemy.getArmorLayerPercent();
 
-            uiShapeRenderer.setColor(healthColor);
-            uiShapeRenderer.rect(hpBarX, hpBarY, halfBarWidth * healthPercent, hpBarHeight);
+                uiShapeRenderer.setColor(healthColor);
+                uiShapeRenderer.rect(hpBarX, hpBarY, halfBarWidth * healthPercent, hpBarHeight);
 
-            Color armorColor = new Color(healthColor).mul(0.45f, 0.45f, 0.45f, 1f);
-            uiShapeRenderer.setColor(armorColor);
-            uiShapeRenderer.rect(hpBarX + halfBarWidth, hpBarY, halfBarWidth * armorPercent, hpBarHeight);
-        } else {
-            uiShapeRenderer.setColor(healthColor);
-            float hpWidth = hpBarWidth * (Math.max(0, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth());
-            uiShapeRenderer.rect(hpBarX, hpBarY, hpWidth, hpBarHeight);
+                Color armorColor = new Color(healthColor).mul(0.45f, 0.45f, 0.45f, 1f);
+                uiShapeRenderer.setColor(armorColor);
+                uiShapeRenderer.rect(hpBarX + halfBarWidth, hpBarY, halfBarWidth * armorPercent, hpBarHeight);
+            } else {
+                uiShapeRenderer.setColor(healthColor);
+                float hpWidth = hpBarWidth * (Math.max(0, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth());
+                uiShapeRenderer.rect(hpBarX, hpBarY, hpWidth, hpBarHeight);
+            }
         }
 
         uiShapeRenderer.end();
@@ -3577,7 +3589,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 : Color.WHITE);
         uiShapeRenderer.setColor(elemColor);
         uiShapeRenderer.rect(px, py, panelW, panelH);
-        if (hoveredEnemy.getMaxArmorLayer() > 0f) {
+        if (!alliedEnemy && hoveredEnemy.getMaxArmorLayer() > 0f) {
             float splitX = hpBarX + (hpBarWidth * 0.5f);
             uiShapeRenderer.setColor(0.92f, 0.92f, 0.92f, 0.95f);
             uiShapeRenderer.line(splitX, hpBarY - 1f * uiScale, splitX, hpBarY + hpBarHeight + 1f * uiScale);
@@ -3608,13 +3620,17 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             uiFont.getData().setScale(uiScale * 0.8f);
         }
 
-        uiFont.setColor(Color.WHITE);
-        
-        uiFont.draw(uiBatch, hpStr, textX, textY + 5f * uiScale);
-        if (armorStr != null) {
-            textY -= 0.82f * lineH;
-            uiFont.setColor(Color.LIGHT_GRAY);
-            uiFont.draw(uiBatch, armorStr, textX, textY + 5f * uiScale);
+        if (alliedEnemy) {
+            uiFont.setColor(Color.WHITE);
+            uiFont.draw(uiBatch, damageStr, textX, textY + 5f * uiScale);
+        } else {
+            uiFont.setColor(Color.WHITE);
+            uiFont.draw(uiBatch, hpStr, textX, textY + 5f * uiScale);
+            if (armorStr != null) {
+                textY -= 0.82f * lineH;
+                uiFont.setColor(Color.LIGHT_GRAY);
+                uiFont.draw(uiBatch, armorStr, textX, textY + 5f * uiScale);
+            }
         }
 
         uiFont.getData().setScale(uiScale);
@@ -3827,6 +3843,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         } else if (deadEnemy instanceof com.td.game.entities.GolemEnemy) {
             ally = new com.td.game.entities.GolemEnemy(deadEnemy.getMaxHealth() * 0.5f, 1.0f, 0);
             ally.setModel(golemLifeModel != null ? golemLifeModel : golemModel);
+            ally.setVisualScaleMultiplier(3.0f);
         } else if (deadEnemy instanceof com.td.game.entities.BatEnemy) {
             ally = new com.td.game.entities.BatEnemy(deadEnemy.getMaxHealth() * 0.5f, 1.0f, 0);
             ally.setModel(batLifeModel != null ? batLifeModel : batModel);
@@ -3839,6 +3856,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         
         ally.setWaypoints(pathWaypoints); 
         ally.setAllied(true);
+        ally.setWaveLimitedAlly(true);
         ally.setMovingBackwards(true);
         ally.setCurrentWaypointIndex(pathWaypoints.size - 1);
         
@@ -3850,6 +3868,24 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
 
         waveManager.getActiveEnemies().add(ally);
         spawnEffect(ally.getPosition(), Element.LIFE, 1.0f, 1.5f);
+    }
+
+    private void clearWaveLimitedAllies() {
+        if (waveManager == null) {
+            return;
+        }
+
+        com.badlogic.gdx.utils.Array<com.td.game.entities.Enemy> enemies = waveManager.getActiveEnemies();
+        if (enemies == null || enemies.size == 0) {
+            return;
+        }
+
+        for (int i = 0; i < enemies.size; i++) {
+            com.td.game.entities.Enemy enemy = enemies.get(i);
+            if (enemy != null && enemy.isAlive() && enemy.isWaveLimitedAlly()) {
+                enemy.takeDamage(enemy.getMaxHealth() * 100f, null, null);
+            }
+        }
     }
 
     private void applyLifeRecallTexture(com.td.game.entities.Enemy ally) {
@@ -3876,9 +3912,6 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             if (ally == null || !ally.isAlive() || !ally.isAllied()) {
                 continue;
             }
-            if (!ally.canDealContactDamage()) {
-                continue;
-            }
 
             com.td.game.entities.Enemy target = null;
             for (int j = 0; j < enemies.size; j++) {
@@ -3893,13 +3926,19 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             }
 
             if (target != null) {
-                float damage = Math.max(1f, ally.getMaxHealth() * LIFE_ALLY_COLLISION_DAMAGE_FACTOR);
+                float damage = getLifeAllyContactDamage(ally);
                 target.takeDamage(damage, Element.LIFE);
-                ally.triggerContactDamageCooldown(LIFE_ALLY_COLLISION_COOLDOWN);
                 spawnEffect(target.getPosition(), Element.LIFE, 0.4f, 1.0f);
                 ally.takeDamage(ally.getMaxHealth() + 1f, Element.LIFE);
             }
         }
+    }
+
+    private float getLifeAllyContactDamage(com.td.game.entities.Enemy ally) {
+        if (ally == null) {
+            return 1f;
+        }
+        return Math.max(1f, ally.getMaxHealth() * LIFE_ALLY_COLLISION_DAMAGE_FACTOR);
     }
 
     private void updateStaffAuraBuffs() {

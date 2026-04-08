@@ -102,6 +102,7 @@ public class Enemy implements Disposable {
     protected float elementalDamageTakenMultiplier;
     protected ArmorLayer armorLayer;
     protected long armorBreakSerial;
+    protected boolean waveLimitedAlly;
 
     public Enemy(float maxHealth, float speed, int reward) {
         this.maxHealth = maxHealth;
@@ -156,6 +157,7 @@ public class Enemy implements Disposable {
         this.elementalDamageTakenMultiplier = 1f;
         this.armorLayer = null;
         this.armorBreakSerial = 0L;
+        this.waveLimitedAlly = false;
     }
 
     public void setModel(Model model) {
@@ -984,6 +986,14 @@ public class Enemy implements Disposable {
 
     public void setAllied(boolean allied) {
         this.isAllied = allied;
+    }
+
+    public boolean isWaveLimitedAlly() {
+        return waveLimitedAlly;
+    }
+
+    public void setWaveLimitedAlly(boolean waveLimitedAlly) {
+        this.waveLimitedAlly = waveLimitedAlly;
     }
 
     public boolean canDealContactDamage() {
