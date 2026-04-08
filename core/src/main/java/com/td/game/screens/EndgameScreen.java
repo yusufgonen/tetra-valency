@@ -207,13 +207,13 @@ public class EndgameScreen implements Screen {
         leaderboardSubmitted = true;
         if (endState == EndState.WIN) {
             Dreamlo.uploadTimeScore(name, timerSeconds, mapType);
-            game.setScreen(new WinLeaderboardScreen(game, mapType, name, timerSeconds));
+            game.setScreen(new WinLeaderboardScreen(game, mapType, name, timerSeconds, this));
             dispose();
             return;
         }
         if (endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE) {
             Dreamlo.uploadWaveScore(name, lastWave, mapType);
-            game.setScreen(new EndlessLeaderboardScreen(game, mapType, name, lastWave));
+            game.setScreen(new EndlessLeaderboardScreen(game, mapType, name, lastWave, this));
             dispose();
         }
     }

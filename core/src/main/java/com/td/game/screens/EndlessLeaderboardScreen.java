@@ -29,6 +29,7 @@ public class EndlessLeaderboardScreen implements Screen {
     private final GameMap.MapType mapType;
     private final String submittedName;
     private final int submittedWave;
+    private final Screen parentScreen;
     private SpriteBatch batch;
     private ShapeRenderer shapes;
     private BitmapFont font;
@@ -40,15 +41,21 @@ public class EndlessLeaderboardScreen implements Screen {
     private boolean loaded;
 
     public EndlessLeaderboardScreen(TowerDefenseGame game, GameMap.MapType mapType) {
-        this(game, mapType, null, -1);
+        this(game, mapType, null, -1, null);
     }
 
     public EndlessLeaderboardScreen(TowerDefenseGame game, GameMap.MapType mapType, String submittedName,
             int submittedWave) {
+        this(game, mapType, submittedName, submittedWave, null);
+    }
+
+    public EndlessLeaderboardScreen(TowerDefenseGame game, GameMap.MapType mapType, String submittedName,
+            int submittedWave, Screen parentScreen) {
         this.game = game;
         this.mapType = mapType;
         this.submittedName = submittedName == null ? "" : submittedName.trim();
         this.submittedWave = submittedWave;
+        this.parentScreen = parentScreen;
     }
 
     @Override
@@ -263,7 +270,8 @@ public class EndlessLeaderboardScreen implements Screen {
         @Override
         public boolean keyDown(int keycode) {
             if (keycode == Input.Keys.ESCAPE) {
-                game.setScreen(new MainMenuScreen(game));
+                Screen target = parentScreen != null ? parentScreen : new MainMenuScreen(game);
+                game.setScreen(target);
                 dispose();
                 return true;
             }
@@ -277,7 +285,8 @@ public class EndlessLeaderboardScreen implements Screen {
             float y = Gdx.graphics.getHeight() - screenY;
             if (backBtn.contains(screenX, y)) {
                 game.audio.playClick();
-                game.setScreen(new MainMenuScreen(game));
+                Screen target = parentScreen != null ? parentScreen : new MainMenuScreen(game);
+                game.setScreen(target);
                 dispose();
                 return true;
             }

@@ -176,6 +176,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private boolean endgameTransitioning;
     private boolean victorySfxPlayed;
     private boolean loseSfxPlayed;
+    private boolean wasJumpedPastMaxWave = false;
     private boolean augmentChoiceActive;
     private int augmentOptionA;
     private int augmentOptionB;
@@ -451,6 +452,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         endgameTransitioning = false;
         victorySfxPlayed = false;
         loseSfxPlayed = false;
+        wasJumpedPastMaxWave = false;
         augmentChoiceActive = false;
         augmentOptionA = -1;
         augmentOptionB = -1;
@@ -595,6 +597,11 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     @Override
     public void clearGameOver() {
         endgameTransitioning = false;
+    }
+
+    @Override
+    public void setWasJumpedPastMaxWave(boolean value) {
+        this.wasJumpedPastMaxWave = value;
     }
 
     private float toDisplayElapsedTime(float elapsedTime, boolean randomizeForConsole) {
@@ -2727,7 +2734,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             }
             return;
         }
-        if (waveManager.areAllWavesComplete() && waveManager.getAliveEnemyCount() == 0) {
+        if (waveManager.areAllWavesComplete() && waveManager.getAliveEnemyCount() == 0 && !wasJumpedPastMaxWave) {
             if (endlessMode) {
                 loseEndless(globalTimer);
             } else {

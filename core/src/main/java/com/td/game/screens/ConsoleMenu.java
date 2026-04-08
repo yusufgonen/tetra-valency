@@ -28,6 +28,7 @@ public class ConsoleMenu {
         boolean isAugmentAcquired(int id);
         void applyAugmentById(int id);
         void addAcquiredAugment(int id);
+        void setWasJumpedPastMaxWave(boolean value);
     }
 
     public static class Layout {
@@ -420,8 +421,15 @@ public class ConsoleMenu {
             return;
         }
 
-        int waveCap = 500;
+        int waveCap = waveManager.getMaxWaves();
         int effectiveWave = Math.min(targetWave, waveCap);
+
+        // Track if jumped past max wave boundary
+        if (targetWave > waveCap) {
+            ctx.setWasJumpedPastMaxWave(true);
+        } else {
+            ctx.setWasJumpedPastMaxWave(false);
+        }
 
         ctx.killAllEnemies();
         waveManager.removeDeadEnemies();
