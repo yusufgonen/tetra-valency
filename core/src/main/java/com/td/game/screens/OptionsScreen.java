@@ -445,7 +445,7 @@ public class OptionsScreen implements Screen {
                 game.setScreen(returnScreen);
                 if (returnScreen instanceof GameScreen) {
                     GameScreen gs = (GameScreen) returnScreen;
-                    gs.returnFromOptions(displayModeChanged);
+                    gs.returnFromOptions(true);
                 }
             } else if (returnMapType != null) {
                 game.setScreen(new GameScreen(game, returnMapType));

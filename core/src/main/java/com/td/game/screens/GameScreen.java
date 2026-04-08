@@ -760,6 +760,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         }
     }
 
+    public void enterOptions() {
+        saveGameState();
+    }
+
     private void resumeFromPause() {
         if (com.td.game.systems.SaveManager.hasSave(mapType)) {
             loadGame();
@@ -2957,6 +2961,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                     resumeFromPause();
                 } else if (isInRect(screenX, flippedY, btnX, optionsY, btnW, btnH)) {
                     game.audio.playClick();
+                    enterOptions();
                     game.setScreen(new OptionsScreen(game, (com.badlogic.gdx.Screen) GameScreen.this));
                     return true;
                 } else if (isInRect(screenX, flippedY, btnX, menuY, btnW, btnH)) {
