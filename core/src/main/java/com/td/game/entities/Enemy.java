@@ -100,6 +100,8 @@ public class Enemy implements Disposable {
     protected Pillar lastHitPillar;
     protected boolean allElementsAffinity;
     protected float elementalDamageTakenMultiplier;
+    protected ArmorLayer armorLayer;
+    protected long armorBreakSerial;
 
     public Enemy(float maxHealth, float speed, int reward) {
         this.maxHealth = maxHealth;
@@ -152,6 +154,8 @@ public class Enemy implements Disposable {
         this.lastHitPillar = null;
         this.allElementsAffinity = false;
         this.elementalDamageTakenMultiplier = 1f;
+        this.armorLayer = null;
+        this.armorBreakSerial = 0L;
     }
 
     public void setModel(Model model) {
@@ -231,7 +235,7 @@ public class Enemy implements Disposable {
         Color healthColor;
         if (element != null) {
             healthColor = new Color(element.getR(), element.getG(), element.getB(), 1f);
-            if (armor > 0) {
+            if (armor > 0 || hasArmorLayer()) {
                 healthColor.mul(0.6f, 0.6f, 0.6f, 1f); 
             }
         } else {
@@ -245,9 +249,15 @@ public class Enemy implements Disposable {
             }
         }
 
-        shapeRenderer.setColor(healthColor);
-        float healthWidth = barWidth * (health / maxHealth);
-        shapeRenderer.rect(barX, barY, healthWidth, barHeight);
+        if (hasArmorLayer()) {
+            shapeRenderer.setColor(0.62f, 0.62f, 0.62f, 1f);
+            float armorWidth = barWidth * getArmorLayerPercent();
+            shapeRenderer.rect(barX, barY, armorWidth, barHeight);
+        } else {
+            shapeRenderer.setColor(healthColor);
+            float healthWidth = barWidth * (health / maxHealth);
+            shapeRenderer.rect(barX, barY, healthWidth, barHeight);
+        }
     }
 
     public void setElement(Element element) {
@@ -589,6 +599,23 @@ public class Enemy implements Disposable {
             }
         }
 
+        if (hasArmorLayer()) {
+            actualDamage = armorLayer.absorb(actualDamage);
+            if (!armorLayer.isActive()) {
+                armorBreakSerial++;
+            }
+        }
+
+        if (actualDamage <= 0f) {
+            if (sourcePillar != null) {
+                lastHitPillar = sourcePillar;
+            }
+            if (damage > 0f) {
+                playEnemyHitSfxThrottled();
+            }
+            return;
+        }
+
         health -= actualDamage;
         if (actualDamage > 0f) {
             if (sourcePillar != null) {
@@ -807,6 +834,40 @@ public class Enemy implements Disposable {
 
     public void setShield(float shield) {
         this.shield = shield;
+    }
+
+    public void enableArmorLayer(float ratio) {
+        float clampedRatio = MathUtils.clamp(ratio, 0f, 1f);
+        float armorHp = maxHealth * clampedRatio;
+        if (armorHp > 0f) {
+            this.armorLayer = new ArmorLayer(armorHp);
+        } else {
+            this.armorLayer = null;
+        }
+    }
+
+    public boolean hasArmorLayer() {
+        return armorLayer != null && armorLayer.isActive();
+    }
+
+    public float getArmorLayer() {
+        return armorLayer == null ? 0f : armorLayer.getArmor();
+    }
+
+    public float getMaxArmorLayer() {
+        return armorLayer == null ? 0f : armorLayer.getMaxArmor();
+    }
+
+    public float getArmorLayerPercent() {
+        float maxArmorLayer = getMaxArmorLayer();
+        if (maxArmorLayer <= 0f) {
+            return 0f;
+        }
+        return MathUtils.clamp(getArmorLayer() / maxArmorLayer, 0f, 1f);
+    }
+
+    public long getArmorBreakSerial() {
+        return armorBreakSerial;
     }
 
     public boolean isAlive() {

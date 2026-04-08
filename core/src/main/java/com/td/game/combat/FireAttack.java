@@ -9,6 +9,7 @@ public class FireAttack implements AttackAction {
     private final float maxRamping;
     private Enemy lastTarget;
     private float currentRamping = 1f;
+    private long lastSeenArmorBreakSerial = -1L;
 
     public FireAttack() {
         this(0.035f, 4.5f);
@@ -28,12 +29,17 @@ public class FireAttack implements AttackAction {
         Enemy target = context.getTarget();
         Pillar pillar = context.getSource();
 
-        if (target == lastTarget && target.isAlive()) {
+        long currentArmorBreakSerial = target.getArmorBreakSerial();
+        boolean armorJustBrokenForThisTarget = target == lastTarget
+                && currentArmorBreakSerial != lastSeenArmorBreakSerial;
+
+        if (target == lastTarget && target.isAlive() && !armorJustBrokenForThisTarget) {
             currentRamping = Math.min(maxRamping, currentRamping + rampingUp);
         } else {
             currentRamping = 1f;
         }
         lastTarget = target;
+        lastSeenArmorBreakSerial = currentArmorBreakSerial;
 
         Element attackerElement = pillar.getCurrentElement();
         float damage = pillar.getActualDamage() * 0.1f * currentRamping;
@@ -52,5 +58,6 @@ public class FireAttack implements AttackAction {
     public void resetRamping() {
         currentRamping = 1f;
         lastTarget = null;
+        lastSeenArmorBreakSerial = -1L;
     }
 }

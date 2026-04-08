@@ -90,6 +90,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private Texture hudGoldIconTexture;
     private Texture hudInfoIconTexture;
     private Texture poisonBurstTexture;
+    private Texture armoredShieldTexture;
     private Texture pauseMenuBackgroundTexture;
     private Model gateModel;
     private Model coreSphereModel;
@@ -294,6 +295,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         hudGoldIconTexture = new Texture(resolveAsset("ui/hud_currency_gold.png"));
         hudInfoIconTexture = new Texture(resolveAsset("ui/hud_info_icon.png"));
         poisonBurstTexture = new Texture(resolveAsset("attack/poison.png"));
+        armoredShieldTexture = new Texture(resolveAsset("ui/shield.png"));
         pauseMenuBackgroundTexture = new Texture(resolveAsset("ui/main_menu_bg.png"));
         elementInfoPanelTexture = loadFirstExistingTexture(
                 new String[] { "ui/element_info_panel.png", "assets/ui/element_info_panel.png" });
@@ -822,6 +824,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 activeEffects,
                 waveManager.getActiveEnemies(),
                 poisonBurstTexture,
+                armoredShieldTexture,
                 globalTimer,
                 mapAreaWidth,
                 screenHeight
@@ -3364,6 +3367,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             hudInfoIconTexture.dispose();
         if (poisonBurstTexture != null)
             poisonBurstTexture.dispose();
+        if (armoredShieldTexture != null)
+            armoredShieldTexture.dispose();
         if (pauseMenuBackgroundTexture != null)
             pauseMenuBackgroundTexture.dispose();
         if (gateModel != null)

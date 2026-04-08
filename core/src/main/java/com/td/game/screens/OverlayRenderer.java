@@ -32,6 +32,7 @@ final class OverlayRenderer {
             Array<Effect> activeEffects,
             Array<Enemy> enemies,
             Texture poisonBurstTexture,
+            Texture armoredShieldTexture,
             float time,
             int mapAreaWidth,
             int screenHeight) {
@@ -54,6 +55,7 @@ final class OverlayRenderer {
         uiBatch.end();
 
         renderPoisonBurstEffects(uiBatch, camera, enemies, poisonBurstTexture, uiScale, mapAreaWidth, screenHeight);
+        renderArmoredShields(uiBatch, camera, enemies, armoredShieldTexture, uiScale, mapAreaWidth, screenHeight);
     }
 
     private static void renderEarthquakeFields(ShapeRenderer uiShapeRenderer,
@@ -163,6 +165,40 @@ final class OverlayRenderer {
             uiBatch.setColor(1f, 1f, 1f, alpha);
             uiBatch.draw(poisonBurstTexture, screenPos.x - drawSize * 0.5f, screenPos.y - drawSize * 0.5f, drawSize,
                     drawSize);
+        }
+        uiBatch.setColor(Color.WHITE);
+        uiBatch.end();
+    }
+
+    private static void renderArmoredShields(SpriteBatch uiBatch,
+            PerspectiveCamera camera,
+            Array<Enemy> enemies,
+            Texture armoredShieldTexture,
+            float uiScale,
+            int mapAreaWidth,
+            int screenHeight) {
+        if (armoredShieldTexture == null || enemies == null || enemies.size == 0) {
+            return;
+        }
+
+        uiBatch.begin();
+        for (Enemy enemy : enemies) {
+            if (enemy == null || !enemy.isAlive() || !enemy.hasArmorLayer()) {
+                continue;
+            }
+
+            Vector3 enemyPos = enemy.getPosition();
+            float yOffset = enemy.isFlying() ? 4.0f : 3.2f;
+            Vector3 screenPos = camera.project(new Vector3(enemyPos.x, enemyPos.y + yOffset, enemyPos.z), 0, 0,
+                    mapAreaWidth, screenHeight);
+            if (screenPos.z < 0f || screenPos.z > 1f || screenPos.x < 0f || screenPos.x > mapAreaWidth || screenPos.y < 0f
+                    || screenPos.y > screenHeight) {
+                continue;
+            }
+
+            float iconSize = 18f * uiScale;
+            uiBatch.setColor(1f, 1f, 1f, 0.95f);
+            uiBatch.draw(armoredShieldTexture, screenPos.x - iconSize * 0.5f, screenPos.y, iconSize, iconSize);
         }
         uiBatch.setColor(Color.WHITE);
         uiBatch.end();
