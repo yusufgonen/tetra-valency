@@ -27,8 +27,9 @@ public class EndlessWaveManager extends WaveManager {
             return super.getEnemiesForWave(wave);
         }
         int endlessStep = wave - ENDLESS_START_WAVE;
-        float count = 28f * (float) Math.pow(1.035f, endlessStep);
-        return MathUtils.clamp(Math.round(count), 20, 500);
+        int baseCount = super.getEnemiesForWave(ENDLESS_START_WAVE);
+        float count = baseCount * (float) Math.pow(1.035f, endlessStep);
+        return MathUtils.clamp(Math.round(count), baseCount, 500);
     }
 
     @Override
@@ -37,9 +38,9 @@ public class EndlessWaveManager extends WaveManager {
             return super.getSpawnIntervalForWave(wave);
         }
         float endlessStep = wave - ENDLESS_START_WAVE;
-        float base = 0.75f;
+        float base = super.getSpawnIntervalForWave(ENDLESS_START_WAVE);
         float interval = base * (float) Math.pow(0.985f, endlessStep);
-        return Math.max(0.22f, interval);
+        return Math.max(0.22f, Math.min(base, interval));
     }
 
     @Override

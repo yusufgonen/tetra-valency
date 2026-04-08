@@ -1922,6 +1922,26 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         uiShapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         uiShapeRenderer.setColor(0.1f, 0.08f, 0.14f, 0.98f);
         uiShapeRenderer.rect(boxX, boxY, boxW, boxH);
+        float gridPadX = 28 * uiScale;
+        float gridPadTop = 90 * uiScale;
+        float gridPadBottom = 90 * uiScale;
+        float gridGapX = 16 * uiScale;
+        float gridGapY = 22 * uiScale;
+        float gridTop = boxY + boxH - gridPadTop;
+        float gridBottom = boxY + gridPadBottom;
+        float gridH = gridTop - gridBottom;
+        float cellW = (boxW - gridPadX * 2f - gridGapX * 3f) / 4f;
+        float cellH = (gridH - gridGapY) / 2f;
+        float cellStartX = boxX + gridPadX;
+        float cellStartY = gridTop - cellH;
+        uiShapeRenderer.setColor(0.2f, 0.12f, 0.28f, 0.9f);
+        for (int r = 0; r < 2; r++) {
+            for (int c = 0; c < 4; c++) {
+                float cx = cellStartX + c * (cellW + gridGapX);
+                float cy = cellStartY - r * (cellH + gridGapY);
+                uiShapeRenderer.rect(cx, cy, cellW, cellH);
+            }
+        }
         uiShapeRenderer.end();
 
         uiBatch.begin();
@@ -1942,20 +1962,29 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         } else {
             int maxCount = Math.min(8, acquiredAugments.size);
             int cols = 4;
-            float iconSize = 72 * uiScale;
-            float gapX = 26 * uiScale;
-            float gapY = 104 * uiScale;
-            float rowW = cols * iconSize + (cols - 1) * gapX;
-            float startX = boxX + (boxW - rowW) * 0.5f;
-            float topY = boxY + boxH - 130 * uiScale;
+            float padX2 = 28 * uiScale;
+            float padTop2 = 90 * uiScale;
+            float padBottom2 = 90 * uiScale;
+            float gapX2 = 16 * uiScale;
+            float gapY2 = 22 * uiScale;
+            float gridTop2 = boxY + boxH - padTop2;
+            float gridBottom2 = boxY + padBottom2;
+            float gridH2 = gridTop2 - gridBottom2;
+            float cellW2 = (boxW - padX2 * 2f - gapX2 * (cols - 1)) / cols;
+            float cellH2 = (gridH2 - gapY2) / 2f;
+            float startX = boxX + padX2;
+            float startY = gridTop2 - cellH2;
 
             for (int i = 0; i < maxCount; i++) {
                 AcquiredAugment aug = acquiredAugments.get(i);
                 int row = i / cols;
                 int col = i % cols;
-                float iconX = startX + col * (iconSize + gapX);
-                float iconY = topY - row * gapY;
-                float cx = iconX + iconSize * 0.5f;
+                float cellX = startX + col * (cellW2 + gapX2);
+                float cellY = startY - row * (cellH2 + gapY2);
+                float iconSize = Math.min(cellW2, cellH2) * 0.62f;
+                float iconX = cellX + (cellW2 - iconSize) * 0.5f;
+                float iconY = cellY + (cellH2 - iconSize) * 0.5f;
+                float cx = cellX + cellW2 * 0.5f;
 
                 String augName = getAugmentName(aug.id);
                 Texture iconTex = getAugmentIconTexture(aug.id);
@@ -1964,11 +1993,18 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                     uiBatch.draw(iconTex, iconX, iconY, iconSize, iconSize);
                 }
 
+                uiFont.setColor(new Color(0.85f, 0.85f, 0.9f, 1f));
+                uiFont.getData().setScale(uiScale * 0.48f);
+                String order = String.valueOf(i + 1);
+                glyphLayout.setText(uiFont, order);
+                uiFont.draw(uiBatch, order, cellX + 6f * uiScale, cellY + cellH2 - 6f * uiScale);
+                uiFont.getData().setScale(uiScale * 0.54f);
+
                 uiFont.setColor(Color.WHITE);
                 glyphLayout.setText(uiFont, augName);
-                uiFont.draw(uiBatch, augName, cx - glyphLayout.width * 0.5f, iconY - 16 * uiScale);
+                uiFont.draw(uiBatch, augName, cx - glyphLayout.width * 0.5f, cellY - 10 * uiScale);
 
-                if (mouseX >= iconX && mouseX <= iconX + iconSize && mouseY >= iconY && mouseY <= iconY + iconSize) {
+                if (mouseX >= cellX && mouseX <= cellX + cellW2 && mouseY >= cellY && mouseY <= cellY + cellH2) {
                     hoverAugId = aug.id;
                 }
             }

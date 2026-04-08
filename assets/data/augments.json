@@ -1,0 +1,20 @@
+[
+  { "id": 0, "name": "Arcane Reach", "desc": "All pillar range +15%" },
+  { "id": 1, "name": "Overcharge", "desc": "All pillar speed +15%" },
+  { "id": 2, "name": "Ember Core", "desc": "All pillar damage +20%" },
+  { "id": 3, "name": "Golden Pact", "desc": "Instant +80 gold" },
+  { "id": 4, "name": "Tetra Slots", "desc": "Inventory capacity +3" },
+  { "id": 5, "name": "Emergency Funding", "desc": "Instant +120 gold" },
+  { "id": 6, "name": "Stipend", "desc": "Instant +100 gold" },
+  { "id": 7, "name": "Expanding Aura", "desc": "Alchemist aura radius +30%" },
+  { "id": 8, "name": "Necromancy", "desc": "Life can revive bosses" },
+  { "id": 9, "name": "Chain of Ahes", "desc": "Fire impacts chain to a nearby enemy for bonus damage and burn" },
+  { "id": 10, "name": "Tidal Seal", "desc": "Every 3 Water hits on the same enemy apply a damage-taken seal" },
+  { "id": 11, "name": "Turbulence", "desc": "Air hits force enemies to walk backward for 2 seconds" },
+  { "id": 12, "name": "Aftershock", "desc": "Earth kills trigger a mini quake with 40% damage in a smaller area" },
+  { "id": 13, "name": "Absolute Zero", "desc": "Frozen enemy deaths freeze nearby enemies in a small radius" },
+  { "id": 14, "name": "Toxic Spill", "desc": "Every 5 poison applications trigger an instant stack explosion" },
+  { "id": 15, "name": "Prism", "desc": "Light pillars always target the highest-health enemy in range" },
+  { "id": 16, "name": "Pressure Surge", "desc": "After 5 Steam knockbacks, the target explodes for its remaining HP in a small radius" },
+  { "id": 17, "name": "Gold Fund", "desc": "Gold pillars stop generating gold. Each finished wave grants (wave + 1) * 10 gold" }
+]

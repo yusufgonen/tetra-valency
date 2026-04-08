@@ -60,7 +60,7 @@ public class ConsoleMenu {
     private static final int INPUT_WAVE = 2;
     private static final int INPUT_GOLD = 3;
     private static final int INPUT_AUGMENT = 4;
-    private static final int MAX_AUGMENT_ID = 8;
+    private static final int MAX_AUGMENT_ID = 17;
 
     private boolean open = false;
     private int activeInput = INPUT_NONE;
