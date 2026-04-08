@@ -3544,9 +3544,23 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             }
         }
 
-        uiShapeRenderer.setColor(healthColor);
-        float hpWidth = hpBarWidth * (Math.max(0, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth());
-        uiShapeRenderer.rect(hpBarX, hpBarY, hpWidth, hpBarHeight);
+        boolean armoredEnemy = hoveredEnemy.getMaxArmorLayer() > 0f;
+        if (armoredEnemy) {
+            float halfBarWidth = hpBarWidth * 0.5f;
+            float healthPercent = MathUtils.clamp(Math.max(0f, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth(), 0f, 1f);
+            float armorPercent = hoveredEnemy.getArmorLayerPercent();
+
+            uiShapeRenderer.setColor(healthColor);
+            uiShapeRenderer.rect(hpBarX, hpBarY, halfBarWidth * healthPercent, hpBarHeight);
+
+            Color armorColor = new Color(healthColor).mul(0.45f, 0.45f, 0.45f, 1f);
+            uiShapeRenderer.setColor(armorColor);
+            uiShapeRenderer.rect(hpBarX + halfBarWidth, hpBarY, halfBarWidth * armorPercent, hpBarHeight);
+        } else {
+            uiShapeRenderer.setColor(healthColor);
+            float hpWidth = hpBarWidth * (Math.max(0, hoveredEnemy.getHealth()) / hoveredEnemy.getMaxHealth());
+            uiShapeRenderer.rect(hpBarX, hpBarY, hpWidth, hpBarHeight);
+        }
 
         uiShapeRenderer.end();
 
@@ -3559,6 +3573,11 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 : Color.WHITE);
         uiShapeRenderer.setColor(elemColor);
         uiShapeRenderer.rect(px, py, panelW, panelH);
+        if (hoveredEnemy.getMaxArmorLayer() > 0f) {
+            float splitX = hpBarX + (hpBarWidth * 0.5f);
+            uiShapeRenderer.setColor(0.92f, 0.92f, 0.92f, 0.95f);
+            uiShapeRenderer.line(splitX, hpBarY - 1f * uiScale, splitX, hpBarY + hpBarHeight + 1f * uiScale);
+        }
         uiShapeRenderer.end();
 
         uiBatch.begin();
