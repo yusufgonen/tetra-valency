@@ -32,4 +32,5 @@ through economy and positioning decisions across enemy waves.
    git clone https://github.com/cosmovisi0n/tetra-valency.git
    cd tetra-valency
    ```
-2. Run `run-lwjgl3.bat` in your folder.
+2. Open `run-lwjgl3.config` and set `PROJECT_DIR` to the folder that contains `gradlew.bat`.
+3. Run `run-lwjgl3.bat`.
