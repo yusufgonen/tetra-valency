@@ -431,7 +431,6 @@ public class ConsoleMenu {
         ctx.killAllEnemies();
         waveManager.removeDeadEnemies();
         waveManager.jumpToWave(targetWave);
-        waveManager.startNextWave();
         waveInput = String.valueOf(targetWave);
         activeInput = INPUT_NONE;
         ctx.showMessage("Jumped to wave " + targetWave);
