@@ -19,6 +19,7 @@ public class ConsoleMenu {
         float getElapsedTime();
         void showMessage(String msg);
         void clearGameOver();
+        void killAllAndAdvanceWave();
         void killAllEnemies();
         void removeDeadEnemies();
         boolean openEndgameForKillAllIfNeeded(float elapsedTime);
@@ -303,9 +304,7 @@ public class ConsoleMenu {
         float elapsedTime = ctx.getElapsedTime();
         switch (cmd) {
             case "killall":
-                ctx.killAllEnemies();
-                ctx.removeDeadEnemies();
-                ctx.openEndgameForKillAllIfNeeded(elapsedTime);
+                ctx.killAllAndAdvanceWave();
                 break;
             case "winnormal":
                 ctx.winNormal(-1f);

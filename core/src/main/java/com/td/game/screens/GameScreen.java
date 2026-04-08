@@ -600,6 +600,23 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     }
 
     @Override
+    public void killAllAndAdvanceWave() {
+        if (waveManager == null) {
+            return;
+        }
+
+        waveManager.killAllEnemies();
+        waveManager.removeDeadEnemies();
+
+        // Force wave completion bookkeeping so we can advance immediately.
+        waveManager.update(0f);
+
+        if (!waveManager.isWaveInProgress()) {
+            tryStartNextWave();
+        }
+    }
+
+    @Override
     public void setWasJumpedPastMaxWave(boolean value) {
         this.wasJumpedPastMaxWave = value;
     }
@@ -2803,10 +2820,9 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         EndgameScreen.EndState endState;
         if (!wasJumpedPastMaxWave && !endlessMode) {
             endState = EndgameScreen.EndState.WIN;
-        } else if (endlessMode) {
+        } else if (endlessMode || wasJumpedPastMaxWave) {
             endState = EndgameScreen.EndState.ENDLESS_FINISH;
         } else {
-            // Jumped past max wave in normal mode (shouldn't happen, but fallback to LOSE)
             endState = EndgameScreen.EndState.LOSE;
         }
         openEndgameScreen(endState, currentWave, Math.max(0f, elapsedTime));
@@ -4012,3 +4028,4 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     }
 
 }
+
