@@ -54,6 +54,9 @@ public class MergeBoard {
     }
 
     private void checkMerge() {
+        if (resultSlot != null) {
+            return;
+        }
         if (slot1 != null && slot2 != null) {
             Element result = Element.merge(slot1, slot2);
             if (result != null) {
@@ -76,6 +79,19 @@ public class MergeBoard {
             return res;
         }
         return null;
+    }
+
+    public void tryResolveMerge() {
+        checkMerge();
+    }
+
+    public Element takeResult() {
+        if (resultSlot == null) {
+            return null;
+        }
+        Element res = resultSlot;
+        resultSlot = null;
+        return res;
     }
 
     public Element tryTakeInputOrb(float tapX, float tapY) {

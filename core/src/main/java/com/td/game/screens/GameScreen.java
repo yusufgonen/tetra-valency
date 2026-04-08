@@ -2743,6 +2743,8 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             }
         }
 
+        // No automatic pickup here; only auto-pick when a new orb is placed.
+
         
         for (com.td.game.entities.Enemy enemy : waveManager.getActiveEnemies()) {
             enemy.update(delta);
@@ -3286,14 +3288,31 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                             inventory.takeSelected();
                             if (!hadResult && mergeBoard.hasResult()) {
                                 economyManager.spend(MERGE_COST);
+                                if (inventory.isFull()) {
+                                    showErrorMessage("Inventory full. Take the merge result before creating a new one.");
+                                }
+                            }
+                            if (mergeBoard.hasResult() && mergeBoard.hasSlot1() && mergeBoard.hasSlot2()) {
+                                if (inventory.isFull()) {
+                                    showErrorMessage("Inventory full. Take the merge result before creating a new one.");
+                                } else {
+                                    Element result = mergeBoard.takeResult();
+                                    if (result != null && inventory.addOrb(result)) {
+                                        mergeBoard.tryResolveMerge();
+                                    } else if (result != null) {
+                                        mergeBoard.setResultElement(result);
+                                    }
+                                }
                             }
                         }
                     } else {
 
                         Element result = mergeBoard.tryTakeResult(screenX, flippedY);
                         if (result != null) {
-                            if (!inventory.addOrb(result))
-                                showErrorMessage("Inventory Full!");
+                            if (!inventory.addOrb(result)) {
+                                showErrorMessage("Inventory full. Take the merge result before creating a new one.");
+                                mergeBoard.setResultElement(result);
+                            }
                         } else {
                             Element inputOrb = mergeBoard.tryTakeInputOrb(screenX, flippedY);
                             if (inputOrb != null && !inventory.addOrb(inputOrb)) {
