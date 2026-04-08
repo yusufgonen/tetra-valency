@@ -116,7 +116,8 @@ public class EndgameScreen implements Screen {
         drawRect(rootPanel, 30f, MENU_BASE);
 
         if (endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE) {
-            drawRect(enterLeaderboardBtn, enterLeaderboardBtn.height * 0.5f, BUTTON_BG);
+            Color lbColor = leaderboardSubmitted ? new Color(0.55f, 0.55f, 0.55f, 1f) : BUTTON_BG;
+            drawRect(enterLeaderboardBtn, enterLeaderboardBtn.height * 0.5f, lbColor);
         }
         if (endState == EndState.WIN) {
             drawRect(endlessModeBtn, endlessModeBtn.height * 0.5f, BUTTON_BG);
@@ -149,6 +150,7 @@ public class EndgameScreen implements Screen {
 
         font.setColor(Color.BLACK);
         if (endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE) {
+            font.setColor(leaderboardSubmitted ? new Color(0.25f, 0.25f, 0.25f, 1f) : Color.BLACK);
             drawCentered(font, "Enter Leaderboard", enterLeaderboardBtn.x, enterLeaderboardBtn.y + 38f,
                     enterLeaderboardBtn.width);
         }
@@ -363,7 +365,7 @@ public class EndgameScreen implements Screen {
             }
 
             if ((endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE)
-                    && enterLeaderboardBtn.contains(screenX, y)) {
+                    && enterLeaderboardBtn.contains(screenX, y) && !leaderboardSubmitted) {
                 game.audio.playClick();
                 handleEnterLeaderboard();
                 return true;
