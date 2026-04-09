@@ -4,6 +4,7 @@ core/build/
 lwjgl3/build/
 **/*.class
 **/*.jar
+!gradle/wrapper/gradle-wrapper.jar
 *.log
 .DS_Store
 Thumbs.db
