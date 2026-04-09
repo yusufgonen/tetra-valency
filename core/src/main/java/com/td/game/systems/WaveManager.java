@@ -316,8 +316,14 @@ public class WaveManager implements Disposable {
     }
 
     public void save(SaveData data) {
-        data.currentWave = this.currentWave;
-        data.enemiesSpawned = this.enemiesSpawned;
+        int waveToSave = this.currentWave;
+        if (waveInProgress) {
+            waveToSave = Math.max(0, this.currentWave - 1);
+            data.enemiesSpawned = 0;
+        } else {
+            data.enemiesSpawned = this.enemiesSpawned;
+        }
+        data.currentWave = waveToSave;
         data.wavesShownAugments = new Array<>();
         for (com.badlogic.gdx.utils.IntSet.IntSetIterator it = wavesShownAugments.iterator(); it.hasNext; ) {
             data.wavesShownAugments.add(it.next());

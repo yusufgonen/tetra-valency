@@ -17,6 +17,7 @@ public class Lwjgl3Launcher {
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle("Tetra Valency");
+        config.setWindowIcon("icon/tv.png");
 
         config.setWindowedMode(1600, 900);
         config.setMaximized(true);

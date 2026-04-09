@@ -181,6 +181,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     private boolean consoleEndlessBigWave = false;
     private boolean saveDirty = false;
     private boolean hasMeaningfulSave = false;
+    private boolean pendingBetweenWaveSave = false;
     private boolean augmentChoiceActive;
     private int augmentOptionA;
     private int augmentOptionB;
@@ -541,15 +542,15 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             placed = mergeBoard.placeOrb(mergeBoard.getSlot2X() + 1f, mergeBoard.getSlot2Y() + 1f, selected);
         }
 
-        if (placed) {
-            inventory.takeSelected();
-            if (willCompleteMerge && mergeBoard.hasResult()) {
-                economyManager.spend(MERGE_COST);
+            if (placed) {
+                inventory.takeSelected();
+                if (willCompleteMerge && mergeBoard.hasResult()) {
+                    economyManager.spend(MERGE_COST);
+                }
+            markDirtyAndSaveBetweenWaves();
+            } else {
+                showMessage("Merge slots are full.");
             }
-            markDirtyAndSave();
-        } else {
-            showMessage("Merge slots are full.");
-        }
     }
 
     public void moveSelectedToCharm() {
@@ -569,7 +570,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         } else {
             int idx = staffUI.getEquippedElement().ordinal();
             player.setStaffOrbModel(new ModelInstance(orbModels[idx]), staffUI.getEquippedElement());
-            markDirtyAndSave();
+            markDirtyAndSaveBetweenWaves();
         }
     }
 
@@ -853,7 +854,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
     }
 
     private void saveOrCleanupBeforeExit() {
-        if (saveDirty) {
+        if (saveDirty && (waveManager == null || !waveManager.isWaveInProgress())) {
             saveGameState();
         } else if (!hasMeaningfulSave && !loadFromSave) {
             com.td.game.systems.SaveManager.deleteSave(mapType);
@@ -2250,6 +2251,15 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
         saveGameState();
     }
 
+    private void markDirtyAndSaveBetweenWaves() {
+        if (waveManager != null && waveManager.isWaveInProgress()) {
+            pendingBetweenWaveSave = true;
+            return;
+        }
+        saveDirty = true;
+        saveGameState();
+    }
+
     private void saveGameState() {
         if (!saveDirty) {
             return;
@@ -2844,6 +2854,10 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                 showMessage("Gold Fund: +" + goldReward + " gold");
             }
             markDirtyAndSave();
+            if (pendingBetweenWaveSave) {
+                pendingBetweenWaveSave = false;
+                markDirtyAndSave();
+            }
         }
 
         if (!waveManager.isWaveInProgress() && (!waveManager.areAllWavesComplete() || wasJumpedPastMaxWave)) {
@@ -3047,7 +3061,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
             if (inventory.addOrb(element)) {
                 economyManager.spend(price);
                 game.audio.playBuySuccess();
-                markDirtyAndSave();
+                markDirtyAndSaveBetweenWaves();
             } else {
                 showErrorMessage("Inventory Full!");
             }
@@ -3285,7 +3299,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                             game.audio.playBuySuccess();
                             Pillar pillar = new Pillar(type, selectedTilePos.cpy(), modelFactory);
                             pillars.add(pillar);
-                            markDirtyAndSave();
+                            markDirtyAndSaveBetweenWaves();
                             buildMenu.hide();
                             selectedTilePos = null;
                             } else {
@@ -3313,7 +3327,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                         pillars.removeValue(selectedPillar, true);
                         selectedPillar = null;
                         awaitingPillarOrbSelection = false;
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                         return true;
                     }
                     if (panelButton == 1) {
@@ -3330,7 +3344,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                             }
                         }
                         awaitingPillarOrbSelection = false;
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                         return true;
                     }
 
@@ -3352,7 +3366,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                         }
                         game.audio.playSell();
                         showMessage("Orb sold for 0G");
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                         return true;
                     }
 
@@ -3361,7 +3375,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                         Element selected = inventory.takeSelected();
                         selectedPillar.placeOrb(selected);
                         awaitingPillarOrbSelection = false;
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                     }
                     return true;
                 }
@@ -3399,7 +3413,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                         }
                     }
                     if (changed) {
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                     }
                     return true;
                 }
@@ -3457,7 +3471,7 @@ public class GameScreen implements Screen, ConsoleMenu.Context {
                         }
                     }
                     if (changed) {
-                        markDirtyAndSave();
+                        markDirtyAndSaveBetweenWaves();
                     }
                     return true;
                 }
