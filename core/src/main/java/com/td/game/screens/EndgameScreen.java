@@ -119,7 +119,7 @@ public class EndgameScreen implements Screen {
         drawRect(rootPanel, 30f, MENU_BASE);
 
         if (endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE) {
-            Color lbColor = leaderboardSubmitted ? new Color(0.55f, 0.55f, 0.55f, 1f) : BUTTON_BG;
+            Color lbColor = canSubmitLeaderboardEntry() ? BUTTON_BG : new Color(0.55f, 0.55f, 0.55f, 1f);
             drawRect(enterLeaderboardBtn, enterLeaderboardBtn.height * 0.5f, lbColor);
         }
         if (endState == EndState.WIN) {
@@ -153,7 +153,7 @@ public class EndgameScreen implements Screen {
 
         font.setColor(Color.BLACK);
         if (endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE) {
-            font.setColor(leaderboardSubmitted ? new Color(0.25f, 0.25f, 0.25f, 1f) : Color.BLACK);
+            font.setColor(canSubmitLeaderboardEntry() ? Color.BLACK : new Color(0.25f, 0.25f, 0.25f, 1f));
             drawCentered(font, "Enter Leaderboard", enterLeaderboardBtn.x, enterLeaderboardBtn.y + 38f,
                     enterLeaderboardBtn.width);
         }
@@ -201,16 +201,33 @@ public class EndgameScreen implements Screen {
     }
 
     private void handleEnterLeaderboard() {
+        if (!canSubmitLeaderboardEntry()) {
+            statusMessage = "Personal best not beaten.";
+            return;
+        }
+        com.td.game.systems.OptionsData options = com.td.game.systems.OptionsManager.get();
+        if (options.hasUsername && options.username != null && !options.username.trim().isEmpty()) {
+            String name = options.username.trim();
+            statusMessage = "Score submitted: " + name;
+            submitLeaderboardEntry(name);
+            return;
+        }
         nicknamePromptOpen = true;
         nicknameDraft = "";
     }
 
     private void submitLeaderboardEntry(String name) {
-        if (leaderboardSubmitted) {
+        if (leaderboardSubmitted || !canSubmitLeaderboardEntry()) {
             return;
         }
         leaderboardSubmitted = true;
+
+        // Entering leaderboard means this run reached at least this wave.
+        com.td.game.systems.OptionsManager.updateHighestWave(mapType, lastWave);
+
         if (endState == EndState.WIN) {
+            // Best 50-wave completion time should only improve when shorter.
+            com.td.game.systems.OptionsManager.updateBestTime(mapType, timerSeconds);
             Dreamlo.uploadTimeScore(name, timerSeconds, mapType);
             game.setScreen(new WinLeaderboardScreen(game, mapType, name, timerSeconds, this));
             return;
@@ -219,6 +236,28 @@ public class EndgameScreen implements Screen {
             Dreamlo.uploadWaveScore(name, lastWave, mapType);
             game.setScreen(new EndlessLeaderboardScreen(game, mapType, name, lastWave, this));
         }
+    }
+
+    private boolean canSubmitLeaderboardEntry() {
+        if (leaderboardSubmitted) {
+            return false;
+        }
+
+        if (endState == EndState.WIN) {
+            if (timerSeconds <= 0f || timerSeconds == Float.MAX_VALUE) {
+                return false;
+            }
+            float bestTime = com.td.game.systems.OptionsManager.getBestTime(mapType);
+            return bestTime == Float.MAX_VALUE || timerSeconds < bestTime;
+        }
+
+        if (endState == EndState.LOSE || endState == EndState.ENDLESS_FINISH) {
+            int bestWave = com.td.game.systems.OptionsManager.getHighestWave(mapType);
+            int safeWave = Math.max(1, lastWave);
+            return safeWave > bestWave;
+        }
+
+        return false;
     }
 
     private String formatTimer(float secondsTotal) {
@@ -366,7 +405,7 @@ public class EndgameScreen implements Screen {
             }
 
             if ((endState == EndState.WIN || endState == EndState.ENDLESS_FINISH || endState == EndState.LOSE)
-                    && enterLeaderboardBtn.contains(screenX, y) && !leaderboardSubmitted) {
+                    && enterLeaderboardBtn.contains(screenX, y) && canSubmitLeaderboardEntry()) {
                 game.audio.playClick();
                 handleEnterLeaderboard();
                 return true;

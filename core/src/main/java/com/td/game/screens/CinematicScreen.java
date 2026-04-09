@@ -237,7 +237,11 @@ public class CinematicScreen implements Screen {
     }
 
     private void goToMainMenu() {
-        game.setScreen(new MainMenuScreen(game));
+        if (com.td.game.systems.OptionsManager.get().hasUsername) {
+            game.setScreen(new MainMenuScreen(game));
+        } else {
+            game.setScreen(new NameEntryScreen(game, false));
+        }
         dispose();
     }
 

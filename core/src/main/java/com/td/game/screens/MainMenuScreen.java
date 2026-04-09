@@ -16,6 +16,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.math.Rectangle;
 import com.td.game.TowerDefenseGame;
+import com.td.game.systems.OptionsManager;
+import com.td.game.systems.OptionsData;
 
 public class MainMenuScreen implements Screen {
     private final TowerDefenseGame game;
@@ -121,11 +123,22 @@ public class MainMenuScreen implements Screen {
         }
         shapes.end();
 
+        OptionsData options = OptionsManager.get();
+
         batch.begin();
         if (logoTexture != null) {
             float logoW = Math.min(w * 0.62f, logoTexture.getWidth());
             float logoH = logoW * ((float) logoTexture.getHeight() / logoTexture.getWidth());
             batch.draw(logoTexture, (w - logoW) * 0.5f, h * 0.58f, logoW, logoH);
+        }
+
+        if (options.hasUsername && options.username != null && !options.username.trim().isEmpty()) {
+            String nameText = "Player: " + options.username.trim();
+            glyphLayout.setText(menuFont, nameText);
+            float nameX = w * 0.5f - glyphLayout.width * 0.5f;
+            float nameY = h * 0.56f;
+            menuFont.setColor(new Color(0.16f, 0.11f, 0.06f, 1f));
+            menuFont.draw(batch, nameText, nameX, nameY);
         }
 
         drawMenuLabel("Play", newGameBtn);

@@ -1,11 +1,11 @@
 package com.td.game.screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Graphics.DisplayMode;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.Graphics.DisplayMode;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,10 +17,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.td.game.TowerDefenseGame;
-import com.td.game.map.GameMap;
 import com.td.game.input.KeyBindings;
-import com.td.game.systems.OptionsManager;
+import com.td.game.map.GameMap;
 import com.td.game.systems.OptionsData;
+import com.td.game.systems.OptionsManager;
 
 public class OptionsScreen implements Screen {
     private final TowerDefenseGame game;
@@ -43,6 +43,7 @@ public class OptionsScreen implements Screen {
     private Rectangle musicKnob;
     private Rectangle soundKnob;
     private Rectangle displayModePill;
+    private Rectangle changeNameBtn;
     private Rectangle editBindingsBtn;
     private Rectangle bindingsPanel;
     private Rectangle bindingsViewport;
@@ -116,8 +117,20 @@ public class OptionsScreen implements Screen {
         soundTrack = new Rectangle(rootPanel.x + 90f, row2 - 56f, rootPanel.width - 190f, 8f);
         musicKnob = new Rectangle(musicTrack.x, musicTrack.y - 10f, 26f, 26f);
         soundKnob = new Rectangle(soundTrack.x, soundTrack.y - 10f, 26f, 26f);
-        displayModePill = new Rectangle(rootPanel.x + rootPanel.width * 0.5f - 180f, rootPanel.y + 92f, 360f, 52f);
-        editBindingsBtn = new Rectangle(rootPanel.x + rootPanel.width * 0.5f - 140f, soundTrack.y - 62f, 280f, 44f);
+        float actionRowY = rootPanel.y + 104f;
+        float actionRowGap = Math.max(10f, rootPanel.width * 0.018f);
+        float maxActionRowWidth = rootPanel.width - 80f;
+        float centerActionW = Math.min(360f, maxActionRowWidth * 0.42f);
+        float sideActionW = (maxActionRowWidth - centerActionW - actionRowGap * 2f) * 0.5f;
+        sideActionW = MathUtils.clamp(sideActionW, 180f, 300f);
+        float actionRowTotalW = sideActionW * 2f + centerActionW + actionRowGap * 2f;
+        float actionStartX = rootPanel.x + (rootPanel.width - actionRowTotalW) * 0.5f;
+
+        displayModePill = new Rectangle(actionStartX, actionRowY, sideActionW, 44f);
+        changeNameBtn = new Rectangle(displayModePill.x + displayModePill.width + actionRowGap, actionRowY,
+            centerActionW, 44f);
+        editBindingsBtn = new Rectangle(changeNameBtn.x + changeNameBtn.width + actionRowGap, actionRowY,
+            sideActionW, 44f);
         bindingsPanel = new Rectangle(rootPanel.x + 50f, rootPanel.y + 90f, rootPanel.width - 100f, rootPanel.height - 250f);
         bindingsViewport = new Rectangle(bindingsPanel.x + 20f, bindingsPanel.y + 20f,
                 bindingsPanel.width - 40f, bindingsPanel.height - 40f);
@@ -191,6 +204,7 @@ public class OptionsScreen implements Screen {
             drawPill(musicPercentPill, new Color(0.56f, 0.43f, 0.33f, 1f));
             drawPill(soundPercentPill, new Color(0.56f, 0.43f, 0.33f, 1f));
             drawPill(displayModePill, new Color(0.56f, 0.43f, 0.33f, 1f));
+            drawPill(changeNameBtn, new Color(0.56f, 0.43f, 0.33f, 1f));
             drawPill(editBindingsBtn, new Color(0.56f, 0.43f, 0.33f, 1f));
         }
         drawRect(backBtn, backBtn.height * 0.5f, new Color(0.56f, 0.43f, 0.33f, 1f));
@@ -225,6 +239,7 @@ public class OptionsScreen implements Screen {
         drawCentered(bindingsOpen ? "Edit Key Bindings" : "Options",
                 rootPanel.x, rootPanel.y + rootPanel.height - 34f, rootPanel.width);
         if (!bindingsOpen) {
+            OptionsData options = OptionsManager.get();
             drawCentered("Music:", musicLabelPill.x, musicLabelPill.y + musicLabelPill.height * 0.67f,
                     musicLabelPill.width);
             drawCentered("Sound:", soundLabelPill.x, soundLabelPill.y + soundLabelPill.height * 0.67f,
@@ -233,9 +248,14 @@ public class OptionsScreen implements Screen {
                     musicPercentPill.y + musicPercentPill.height * 0.67f, musicPercentPill.width);
             drawCentered(Math.round(soundVolume * 100f) + "%", soundPercentPill.x,
                     soundPercentPill.y + soundPercentPill.height * 0.67f, soundPercentPill.width);
-            drawCentered("Display: " + (fullscreenMode ? "Fullscreen" : "Windowed"), displayModePill.x,
+                drawCentered("Display: " + (fullscreenMode ? "Full" : "Window"), displayModePill.x,
                     displayModePill.y + displayModePill.height * 0.67f, displayModePill.width);
-            drawCentered("Edit Keybindings", editBindingsBtn.x, editBindingsBtn.y + editBindingsBtn.height * 0.67f,
+            String nameLabel = (options.hasUsername && options.username != null && !options.username.trim().isEmpty())
+                    ? "Change Name"
+                    : "Set Name";
+            drawCentered(nameLabel, changeNameBtn.x, changeNameBtn.y + changeNameBtn.height * 0.7f,
+                    changeNameBtn.width);
+                drawCentered("Keybindings", editBindingsBtn.x, editBindingsBtn.y + editBindingsBtn.height * 0.67f,
                     editBindingsBtn.width);
         }
         drawCentered("Back", backBtn.x, backBtn.y + backBtn.height * 0.67f, backBtn.width);
@@ -272,6 +292,20 @@ public class OptionsScreen implements Screen {
             ((GameScreen) returnScreen).saveForOptions();
         }
         applyDisplayMode(true);
+    }
+
+    private OptionsScreen buildReturnOptionsScreen() {
+        OptionsScreen fresh;
+        if (returnScreen != null) {
+            fresh = new OptionsScreen(game, returnScreen);
+        } else if (returnMapType != null) {
+            fresh = new OptionsScreen(game, returnMapType);
+        } else {
+            fresh = new OptionsScreen(game);
+        }
+        fresh.musicVolume = this.musicVolume;
+        fresh.soundVolume = this.soundVolume;
+        return fresh;
     }
 
     private void applyDisplayMode(boolean refresh) {
@@ -523,6 +557,12 @@ public class OptionsScreen implements Screen {
             if (displayModePill.contains(screenX, y)) {
                 game.audio.playClick();
                 toggleDisplayMode();
+                return true;
+            }
+            if (changeNameBtn.contains(screenX, y)) {
+                game.audio.playClick();
+                game.setScreen(new NameEntryScreen(game, true, buildReturnOptionsScreen()));
+                dispose();
                 return true;
             }
             if (editBindingsBtn.contains(screenX, y)) {
