@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Screen;
-
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -12,12 +11,15 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Timer;
 import com.td.game.TowerDefenseGame;
-import com.td.game.systems.OptionsManager;
+import com.td.game.map.GameMap;
 import com.td.game.systems.OptionsData;
+import com.td.game.systems.OptionsManager;
+import com.td.game.utils.Dreamlo;
 
 public class MainMenuScreen implements Screen {
     private final TowerDefenseGame game;
@@ -59,6 +61,8 @@ public class MainMenuScreen implements Screen {
         logoTexture = loadTextureSafe("ui/game_logo.png");
 
         game.audio.playMenuMusic();
+
+        syncLeaderboardsFromOptions();
 
         uiMessage = "";
         uiMessageTimer = 0f;
@@ -166,6 +170,53 @@ public class MainMenuScreen implements Screen {
         boolean hover = r.contains(Gdx.input.getX(), mouseY);
         menuFont.setColor(hover ? new Color(0.10f, 0.07f, 0.04f, 1f) : new Color(0.16f, 0.11f, 0.06f, 1f));
         menuFont.draw(batch, text, tx, ty);
+    }
+
+    private void syncLeaderboardsFromOptions() {
+        OptionsData options = OptionsManager.get();
+        if (options == null || options.username == null) {
+            return;
+        }
+
+        OptionsManager.ensureDefaults(options);
+
+        String username = options.username.trim();
+        if (username.isEmpty()) {
+            return;
+        }
+        if (!options.hasUsername) {
+            options.hasUsername = true;
+            OptionsManager.save();
+        }
+
+        syncMapEntries(username, GameMap.MapType.ELEMENTAL_CASTLE);
+        syncMapEntries(username, GameMap.MapType.DESERT_OASIS);
+    }
+
+    private void syncMapEntries(String username, GameMap.MapType mapType) {
+        int wave = OptionsManager.getHighestWave(mapType);
+        if (wave > 0) {
+            Dreamlo.uploadWaveScore(username, wave, mapType);
+            int waveValue = wave;
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    Dreamlo.uploadWaveScore(username, waveValue, mapType);
+                }
+            }, 0.7f);
+        }
+
+        float time = OptionsManager.getBestTime(mapType);
+        if (time > 0f && time != Float.MAX_VALUE) {
+            Dreamlo.uploadTimeScore(username, time, mapType);
+            float timeValue = time;
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    Dreamlo.uploadTimeScore(username, timeValue, mapType);
+                }
+            }, 0.85f);
+        }
     }
 
     @Override

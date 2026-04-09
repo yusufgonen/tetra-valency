@@ -14,8 +14,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Timer;
 import com.td.game.TowerDefenseGame;
 import com.td.game.map.GameMap;
+import com.td.game.systems.OptionsData;
+import com.td.game.systems.OptionsManager;
 import com.td.game.utils.Dreamlo;
 
 public class LeaderboardScreen implements Screen {
@@ -58,10 +61,53 @@ public class LeaderboardScreen implements Screen {
         if (bgTexture == null) {
             bgTexture = loadTextureSafe("ui/augment_screen_bg.png");
         }
+        syncLeaderboardEntriesFromOptions();
         initLoadingRows();
         recalcLayout();
         loadLeaderboardData();
         Gdx.input.setInputProcessor(new InputHandler());
+    }
+
+    private void syncLeaderboardEntriesFromOptions() {
+        OptionsData options = OptionsManager.get();
+        if (options == null || options.username == null) {
+            return;
+        }
+
+        OptionsManager.ensureDefaults(options);
+        String username = options.username.trim();
+        if (username.isEmpty()) {
+            return;
+        }
+
+        syncMapEntries(username, GameMap.MapType.ELEMENTAL_CASTLE);
+        syncMapEntries(username, GameMap.MapType.DESERT_OASIS);
+    }
+
+    private void syncMapEntries(String username, GameMap.MapType mapType) {
+        int wave = OptionsManager.getHighestWave(mapType);
+        if (wave > 0) {
+            Dreamlo.uploadWaveScore(username, wave, mapType);
+            int waveValue = wave;
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    Dreamlo.uploadWaveScore(username, waveValue, mapType);
+                }
+            }, 0.7f);
+        }
+
+        float time = OptionsManager.getBestTime(mapType);
+        if (time > 0f && time != Float.MAX_VALUE) {
+            Dreamlo.uploadTimeScore(username, time, mapType);
+            float timeValue = time;
+            Timer.schedule(new Timer.Task() {
+                @Override
+                public void run() {
+                    Dreamlo.uploadTimeScore(username, timeValue, mapType);
+                }
+            }, 0.85f);
+        }
     }
 
     private void initLoadingRows() {
