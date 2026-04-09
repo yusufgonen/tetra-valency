@@ -32,5 +32,13 @@ through economy and positioning decisions across enemy waves.
    git clone https://github.com/cosmovisi0n/tetra-valency.git
    cd tetra-valency
    ```
-2. Open `run-lwjgl3.config` and set `PROJECT_DIR` to the folder that contains `gradlew.bat`.
-3. Run `run-lwjgl3.bat`.
+2. Create a desktop shortcut with the game icon (Windows):
+   ```powershell
+   $projectDir = (Get-Location).Path
+   $ws = New-Object -ComObject WScript.Shell
+   $lnk = $ws.CreateShortcut("$env:USERPROFILE\\Desktop\\Tetra Valency.lnk")
+   $lnk.TargetPath = "$projectDir\\run-lwjgl3.bat"
+   $lnk.WorkingDirectory = "$projectDir"
+   $lnk.IconLocation = "$projectDir\\assets\\icon\\tv.ico"
+   $lnk.Save()
+   ```
